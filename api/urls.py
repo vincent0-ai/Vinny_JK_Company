@@ -2,7 +2,7 @@ from django.urls import path
 from .views import cancel_order, cancel_booking
 from .views import (
     ServicesListCreateView, ServicesDetailView,
-    GoodsListCreateView, GoodsDetailView,
+    ProductListCreateView, ProductDetailView,
     OrderCreateView, OrderListView, OrderDetailView,
     BookingCreateView, BookingListView, BookingDetailView,
     confirm_booking, complete_booking,
@@ -14,9 +14,9 @@ urlpatterns = [
     path('services/', ServicesListCreateView.as_view()),
     path('services/<int:pk>/', ServicesDetailView.as_view()),
 
-    # Goods
-    path('goods/', GoodsListCreateView.as_view()),
-    path('goods/<int:pk>/', GoodsDetailView.as_view()),
+    # Products
+    path('products/', ProductListCreateView.as_view()),
+    path('products/<int:pk>/', ProductDetailView.as_view()),
 
     # Orders
     path('orders/', OrderListView.as_view()),

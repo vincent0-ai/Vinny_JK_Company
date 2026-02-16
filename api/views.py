@@ -1,15 +1,15 @@
 from rest_framework import generics
-from .models import Services, Goods, Order, Booking
+from .models import Services, Product, Order, Booking
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db.models.functions import TruncDay, TruncMonth,TruncWeek
 from rest_framework import status
 from django.db.models import Sum, Count
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 from .serializers import (
     ServicesSerializer,
-    GoodsSerializer,
+    ProductSerializer,
     OrderSerializer,
     BookingSerializer
 )
@@ -23,14 +23,14 @@ class ServicesDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Services.objects.all()
     serializer_class = ServicesSerializer
 
-class GoodsListCreateView(generics.ListCreateAPIView):
-    queryset = Goods.objects.all()
-    serializer_class = GoodsSerializer
+class ProductListCreateView(generics.ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
 
 
-class GoodsDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Goods.objects.all()
-    serializer_class = GoodsSerializer
+class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
 
 class OrderCreateView(generics.CreateAPIView):
     queryset = Order.objects.all()
@@ -65,36 +65,46 @@ class BookingDetailView(generics.RetrieveAPIView):
 @api_view(['POST'])
 def create_order(request):
     try:
-        goods_id = request.data.get('goods')
+        product_id = request.data.get('product')
         quantity = int(request.data.get('quantity', 1))
 
-        goods = Goods.objects.get(id=goods_id)
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(id=product_id)
 
-        total_price = goods.price * quantity
+            try:
+                product.reduce_stock(quantity)
+            except ValueError as e:
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            total_price = product.price * quantity
 
-        order = Order.objects.create(
-            goods=goods,
-            quantity=quantity,
-            total_price=total_price,
-            auto_part=request.data.get('auto_part'),
-            vehicle_model=request.data.get('vehicle_model'),
-            vehicle_make=request.data.get('vehicle_make'),
-            vehicle_year=request.data.get('vehicle_year'),
-            full_name=request.data.get('full_name'),
-            phone_number=request.data.get('phone_number'),
-            estate=request.data.get('estate'),
-            street_address=request.data.get('street_address')
-        )
+            order = Order.objects.create(
+                product=product,
+                quantity=quantity,
+                total_price=total_price,
+                auto_part=request.data.get('auto_part'),
+                vehicle_model=request.data.get('vehicle_model'),
+                vehicle_make=request.data.get('vehicle_make'),
+                vehicle_year=request.data.get('vehicle_year'),
+                full_name=request.data.get('full_name'),
+                phone_number=request.data.get('phone_number'),
+                estate=request.data.get('estate'),
+                street_address=request.data.get('street_address')
+            )
 
         return Response({
             "message": "Order created successfully",
             "order_id": order.id,
+            "remaining_stock": product.stock_quantity,
             "total_price": total_price
         }, status=status.HTTP_201_CREATED)
 
-    except Goods.DoesNotExist:
+    except Product.DoesNotExist:
         return Response(
-            {"error": "Goods not found"},
+            {"error": "Product not found"},
             status=status.HTTP_404_NOT_FOUND
         )
 
@@ -111,14 +121,48 @@ def create_booking(request):
     try:
         services_id = request.data.get('services')
         services = Services.objects.get(id=services_id)
+        
+        booking_date_str = request.data.get('booking_date')
+        booking_time_str = request.data.get('booking_time')
+        
+        # Validate date and time
+        if not booking_date_str or not booking_time_str:
+             return Response(
+                {"error": "Date and Time are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        booking_date = datetime.strptime(booking_date_str, "%Y-%m-%d").date()
+        booking_time = datetime.strptime(booking_time_str, "%H:%M").time()
+
+        # Logic for avoid booking in the past
+        if booking_date < timezone.now().date():
+            return Response(
+                {"error": "Booking date cannot be in the past"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Logic for avoid booking twice
+        existing_booking = Booking.objects.filter(
+            services=services,
+            booking_date=booking_date,
+            booking_time=booking_time,
+            status__in=['pending', 'confirmed']
+        ).exists()
+
+        if existing_booking:
+            return Response(
+                {"error": "This time slot is already booked."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         total_price = services.price
 
         booking = Booking.objects.create(
             services=services,
             total_price=total_price,
-            booking_date=request.data.get('booking_date'),
-            booking_time=request.data.get('booking_time'),
+            booking_date=booking_date,
+            booking_time=booking_time,
             full_name=request.data.get('full_name'),
             phone_number=request.data.get('phone_number'),
             vehicle_model=request.data.get('vehicle_model'),
@@ -138,106 +182,13 @@ def create_booking(request):
             status=status.HTTP_404_NOT_FOUND
         )
 
-
     except Exception as e:
         return Response(
             {"error": str(e)},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-        # Logic for avoid booking in the past
-        if booking.booking_date < timezone.now().date():
-            return Response(
-                {"error": "Booking date cannot be in the past"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-            #logic for avoid booking twice
-            if Booking.objects.filter(full_name=booking.full_name, booking_date=booking.booking_date, booking_time=booking.booking_time).exists():
-                return Response(
-                    {"error": "Booking already exists"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
                 
-booking_time = datetime.strptime(request.data['booking_time'], "%H:%M").time()
-booking_date = request.data['booking_date']
-service = Services.objects.get(id=request.data['service'])
-
-existing_booking = Booking.objects.filter(
-    services=service,
-    booking_date=booking_date,
-    booking_time=booking_time,
-    status__in=['pending', 'confirmed']
-).exists()
-
-if existing_booking:
-    return Response(
-        {"error": "This time slot is already booked."},
-        status=400
-    )
-                
-# stock reduction logic
-@api_view(['POST'])
-def create_order(request):
-    try:
-        goods_id = request.data.get('goods')
-        quantity = int(request.data.get('quantity', 1))
-
-        with transaction.atomic():  
-            goods = Goods.objects.select_for_update().get(id=goods_id)
-
-            
-            if goods.stock_quantity < quantity:
-                return Response(
-                    {"error": "Not enough stock available"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            
-            total_price = goods.price * quantity
-
-            
-            order = Order.objects.create(
-                goods=goods,
-                quantity=quantity,
-                total_price=total_price,
-                auto_part=request.data.get('auto_part'),
-                vehicle_model=request.data.get('vehicle_model'),
-                vehicle_make=request.data.get('vehicle_make'),
-                vehicle_year=request.data.get('vehicle_year'),
-                full_name=request.data.get('full_name'),
-                phone_number=request.data.get('phone_number'),
-                estate=request.data.get('estate'),
-                street_address=request.data.get('street_address')
-            )
-
-            
-            goods.stock_quantity -= quantity
-
-            
-            if goods.stock_quantity == 0:
-                goods.is_available = False
-
-            goods.save()
-
-        return Response({
-            "message": "Order created successfully",
-            "order_id": order.id,
-            "remaining_stock": goods.stock_quantity,
-            "total_price": total_price
-        }, status=status.HTTP_201_CREATED)
-
-    except Goods.DoesNotExist:
-        return Response(
-            {"error": "Goods not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-    except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=status.HTTP_400_BAD_REQUEST
-        )   
+   
 
 #cancel order and restore stock
 CANCELLATION_LIMIT_HOURS = 2
@@ -253,11 +204,8 @@ def cancel_order(request, order_id):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            goods = order.goods
-
-            goods.stock_quantity += order.quantity
-            goods.is_available = True
-            goods.save()
+            product = order.product
+            product.restore_stock(order.quantity)
 
             order.is_cancelled = True
             order.is_pending = False
@@ -268,7 +216,7 @@ def cancel_order(request, order_id):
         return Response({
             "message": "Order cancelled and stock restored",
             "restored_quantity": order.quantity,
-            "current_stock": goods.stock_quantity
+            "current_stock": product.stock_quantity
         }, status=status.HTTP_200_OK)
 
     except Order.DoesNotExist:

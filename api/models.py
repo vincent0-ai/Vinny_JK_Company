@@ -4,25 +4,60 @@ from django.utils import timezone
 
 class Services(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(blank=False)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='services/')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-class Goods(models.Model):
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Categories"
+
+
+class Product(models.Model):
+    category = models.ForeignKey(Category, related_name='products', on_delete=models.SET_NULL, null=True, blank=True)
     name = models.CharField(max_length=255)
-    description = models.TextField()
+    slug = models.SlugField(unique=True, blank=True)
+    sku = models.CharField(max_length=50, unique=True, blank=True, null=True)
+    description = models.TextField(blank=False)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='goods/')
+    image = models.ImageField(upload_to='products/')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_available = models.BooleanField(default=True)
     stock_quantity = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    def has_stock(self, quantity=1):
+        return self.stock_quantity >= quantity
+
+    def reduce_stock(self, quantity):
+        if not self.has_stock(quantity):
+            raise ValueError("Not enough stock")
+        self.stock_quantity -= quantity
+        if self.stock_quantity == 0:
+            self.is_available = False
+        self.save()
+
+    def restore_stock(self, quantity):
+        self.stock_quantity += quantity
+        if self.stock_quantity > 0:
+            self.is_available = True
+        self.save()
 
 
 class Order(models.Model):
-    goods = models.ForeignKey('Goods', on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     quantity = models.IntegerField(blank=True, null=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)

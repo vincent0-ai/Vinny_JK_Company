@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from .models import Services, Goods, Order, Booking
+from .models import Services, Product, Order, Booking, Category
 
 
 class ServicesSerializer(serializers.ModelSerializer):
@@ -9,9 +9,19 @@ class ServicesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class GoodsSerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Goods
+        model = Category
+        fields = '__all__'
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source='category', write_only=True, required=False
+    )
+    class Meta:
+        model = Product
         fields = '__all__'
 
 

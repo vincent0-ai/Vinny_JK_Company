@@ -87,10 +87,10 @@ async function fetchServices() {
   }
 }
 
-async function fetchGoods() {
+async function fetchProducts() {
   try {
-    const response = await fetch(`${API_BASE_URL}/goods/`);
-    if (!response.ok) throw new Error('Failed to fetch goods');
+    const response = await fetch(`${API_BASE_URL}/products/`);
+    if (!response.ok) throw new Error('Failed to fetch products');
     return await response.json();
   } catch (error) {
     console.warn('API not available, using fallback:', error.message);
@@ -189,7 +189,7 @@ function renderProductCard(product, isPreview) {
 // ---- Page Initialization ----
 
 // Store fetched data for search/filter
-let allGoods = [];
+let allProducts = [];
 let allServices = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -216,14 +216,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ---- Home Page: Products Preview ----
   const productsPreviewContainer = document.getElementById('productsPreviewContainer');
   if (productsPreviewContainer) {
-    const goods = await fetchGoods();
-    if (goods && goods.length > 0) {
-      allGoods = goods;
-      const previewGoods = goods.filter(g => g.is_available).slice(0, 3);
-      if (previewGoods.length > 0) {
-        productsPreviewContainer.innerHTML = previewGoods.map(g => renderProductCard(g, true)).join('');
+    const products = await fetchProducts();
+    if (products && products.length > 0) {
+      allProducts = products;
+      const previewProducts = products.filter(p => p.is_available).slice(0, 3);
+      if (previewProducts.length > 0) {
+        productsPreviewContainer.innerHTML = previewProducts.map(p => renderProductCard(p, true)).join('');
       } else {
-        productsPreviewContainer.innerHTML = goods.slice(0, 3).map(g => renderProductCard(g, true)).join('');
+        productsPreviewContainer.innerHTML = products.slice(0, 3).map(p => renderProductCard(p, true)).join('');
       }
     } else {
       productsPreviewContainer.innerHTML = `
@@ -296,10 +296,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ---- Products Page: Full Listing ----
   const productsContainer = document.getElementById('productsContainer');
   if (productsContainer && !productsPreviewContainer) {
-    const goods = await fetchGoods();
-    if (goods && goods.length > 0) {
-      allGoods = goods;
-      productsContainer.innerHTML = goods.map(g => renderProductCard(g, false)).join('');
+    const products = await fetchProducts();
+    if (products && products.length > 0) {
+      allProducts = products;
+      productsContainer.innerHTML = products.map(p => renderProductCard(p, false)).join('');
     } else {
       productsContainer.innerHTML = `
         <div class="no-results">
@@ -316,19 +316,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const productFilter = document.getElementById('productFilter');
 
   function filterProducts() {
-    if (!productsContainer || allGoods.length === 0) return;
+    if (!productsContainer || allProducts.length === 0) return;
     const searchTerm = (productSearch ? productSearch.value : '').toLowerCase();
     const filterVal = productFilter ? productFilter.value : 'all';
 
-    let filtered = allGoods.filter(g => {
-      const matchesSearch = g.name.toLowerCase().includes(searchTerm) || (g.description && g.description.toLowerCase().includes(searchTerm));
-      const matchesFilter = filterVal === 'all' || (filterVal === 'in-stock' && g.is_available && g.stock_quantity > 0);
+    let filtered = allProducts.filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm) || (p.description && p.description.toLowerCase().includes(searchTerm));
+      const matchesFilter = filterVal === 'all' || (filterVal === 'in-stock' && p.is_available && p.stock_quantity > 0);
       return matchesSearch && matchesFilter;
     });
 
     const noResults = document.getElementById('noProductsFound');
     if (filtered.length > 0) {
-      productsContainer.innerHTML = filtered.map(g => renderProductCard(g, false)).join('');
+      productsContainer.innerHTML = filtered.map(p => renderProductCard(p, false)).join('');
       productsContainer.classList.remove('d-none');
       if (noResults) noResults.classList.add('d-none');
     } else {
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const galleryContainer = document.getElementById('galleryContainer');
   if (galleryContainer) {
     try {
-      const [services, goods] = await Promise.all([fetchServices(), fetchGoods()]);
+      const [services, products] = await Promise.all([fetchServices(), fetchProducts()]);
       const images = [];
 
       if (services) {
@@ -352,9 +352,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (s.image) images.push({ url: s.image, alt: s.name, type: 'Service' });
         });
       }
-      if (goods) {
-        goods.forEach(g => {
-          if (g.image) images.push({ url: g.image, alt: g.name, type: 'Product' });
+      if (products) {
+        products.forEach(p => {
+          if (p.image) images.push({ url: p.image, alt: p.name, type: 'Product' });
         });
       }
 
@@ -549,7 +549,7 @@ document.addEventListener('click', async function (e) {
     }
 
     const orderData = {
-      goods: parseInt(document.getElementById('orderGoodsId').value),
+      product: parseInt(document.getElementById('orderGoodsId').value),
       quantity: qty,
       total_price: qty * currentOrderProduct.price,
       full_name: document.getElementById('orderName').value,
