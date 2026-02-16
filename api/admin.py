@@ -1,11 +1,9 @@
 from django.contrib import admin
-from .models import Services
-from .models import Goods
-from .models import Order
-from .models import Booking
+from .models import Services, Product, Order, Booking, Category
 
 admin.site.register(Services)
-admin.site.register(Goods)
+admin.site.register(Category)
+admin.site.register(Product)
 admin.site.register(Order)
 admin.site.register(Booking)
 

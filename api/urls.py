@@ -2,9 +2,11 @@ from django.urls import path
 from .views import cancel_order, cancel_booking
 from .views import (
     ServicesListCreateView, ServicesDetailView,
-    GoodsListCreateView, GoodsDetailView,
+    ProductListCreateView, ProductDetailView,
     OrderCreateView, OrderListView, OrderDetailView,
-    BookingCreateView, BookingListView, BookingDetailView
+    BookingCreateView, BookingListView, BookingDetailView,
+    confirm_booking, complete_booking,
+    bookings_summary, booking_revenue, daily_bookings, monthly_bookings, weekly_bookings
 )
 
 urlpatterns = [
@@ -12,9 +14,9 @@ urlpatterns = [
     path('services/', ServicesListCreateView.as_view()),
     path('services/<int:pk>/', ServicesDetailView.as_view()),
 
-    # Goods
-    path('goods/', GoodsListCreateView.as_view()),
-    path('goods/<int:pk>/', GoodsDetailView.as_view()),
+    # Products
+    path('products/', ProductListCreateView.as_view()),
+    path('products/<int:pk>/', ProductDetailView.as_view()),
 
     # Orders
     path('orders/', OrderListView.as_view()),
@@ -25,6 +27,14 @@ urlpatterns = [
     # Bookings
     path('bookings/', BookingListView.as_view()),
     path('bookings/create/', BookingCreateView.as_view()),
+    path('bookings/<int:pk>/confirm/', confirm_booking),
+    path('bookings/<int:pk>/complete/', complete_booking),
     path('bookings/<int:pk>/cancel/', cancel_booking),
     path('bookings/<int:pk>/', BookingDetailView.as_view()),
+    #booking summary
+    path('bookings/summary/', bookings_summary),
+    path('bookings/revenue/', booking_revenue),
+    path('bookings/daily/', daily_bookings),
+    path('bookings/monthly/', monthly_bookings),
+    path('bookings/weekly/', weekly_bookings),
 ]
