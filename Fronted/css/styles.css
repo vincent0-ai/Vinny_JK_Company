@@ -137,10 +137,6 @@ img {
   color: var(--secondary) !important;
 }
 
-.navbar-collapse {
-  transition: var(--transition);
-}
-
 .navbar-toggler {
   border-color: rgba(255, 255, 255, 0.3);
 }
@@ -162,79 +158,68 @@ img {
   color: var(--primary) !important;
 }
 
-/* Offcanvas-style slide-in from right on mobile */
+/* ---- Mobile dropdown menu ---- */
 @media (max-width: 991.98px) {
-  .navbar-collapse {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 280px;
-    height: 100vh;
-    background-color: var(--primary-dark);
-    padding: 1.5rem;
+  #mainNavbar {
     z-index: 1050;
-    display: flex !important;
-    flex-direction: column;
-    transform: translateX(100.1%); /* Slightly more to ensure hidden */
-    transition: transform 0.35s ease;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .navbar-collapse {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: auto;
+    width: 260px;
+    background-color: var(--primary-dark);
+    padding: 0.5rem 0;
+    box-shadow: -4px 4px 20px rgba(0, 0, 0, 0.5);
+    border-radius: 0 0 var(--radius) var(--radius);
     overflow-y: auto;
-    /* Reset visibility if any */
-    visibility: visible !important;
+    max-height: calc(100vh - 60px);
+    z-index: 10;
   }
 
   .navbar-collapse.show {
-    transform: translateX(0);
+    display: block;
+    animation: menuDropIn 0.2s ease-out;
   }
 
-  /* Specific fix for browsers trying to show it */
-  .navbar-collapse:not(.show) {
-    pointer-events: none;
-    opacity: 0;
-  }
-  
-  .navbar-collapse.show {
-    pointer-events: auto;
-    opacity: 1;
+  @keyframes menuDropIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .navbar-collapse .navbar-nav {
-    margin-top: 3.5rem;
+    margin-top: 0;
+    padding: 0.5rem 0;
+    flex-direction: column;
   }
 
   .navbar-collapse .nav-link {
-    padding: 0.75rem 1rem !important;
-    font-size: 1.05rem;
+    padding: 0.75rem 1.2rem !important;
+    font-size: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: block;
+  }
+
+  .navbar-collapse .nav-link:hover,
+  .navbar-collapse .nav-link:active,
+  .navbar-collapse .nav-link.active {
+    background-color: rgba(232, 168, 37, 0.12);
+    color: var(--secondary) !important;
   }
 
   .navbar-collapse .nav-cta {
-    margin-top: 1rem;
+    margin-top: 0.25rem;
     margin-left: 0 !important;
+    padding: 0.3rem 1rem;
   }
 
   .navbar-collapse .nav-cta .nav-link {
     text-align: center;
     border-bottom: none;
-  }
-
-  /* Overlay behind the menu */
-  .navbar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1040;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-  }
-
-  .navbar-overlay.show {
-    opacity: 1;
-    visibility: visible;
+    border-radius: 5px;
   }
 }
 
@@ -963,8 +948,11 @@ html {
 
 @media (max-width: 767.98px) {
   .floating-contact {
-    bottom: 20px;
-    right: 20px;
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 1030 !important;
+    display: flex !important;
   }
   
   .back-to-top {
@@ -1046,17 +1034,10 @@ html {
     height: 300px;
   }
 
-  /* Full-screen modal on tablet and below */
+  /* Modal on tablet: just reduce margin, not full-screen */
   .modal-dialog.modal-lg {
-    margin: 0;
-    max-width: 100%;
-    min-height: 100vh;
-  }
-
-  .modal-dialog.modal-lg .modal-content {
-    border-radius: 0;
-    min-height: 100vh;
-    border: none;
+    margin: 1rem;
+    max-width: calc(100% - 2rem);
   }
 
   .modal-dialog.modal-lg .modal-body {
@@ -1300,9 +1281,10 @@ html {
     font-size: 1.35rem;
   }
 
-  /* Order modal full screen */
+  /* Order modal compact on small screens */
   .modal-dialog.modal-lg {
-    margin: 0;
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
   }
 
   .modal-dialog.modal-lg .modal-body {

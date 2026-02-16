@@ -6,82 +6,24 @@
 // ---- Configuration ----
 const API_BASE_URL = '/api'; // Change to full URL if frontend is served separately, e.g. 'http://127.0.0.1:8000/api'
 
-// ---- Mobile Nav Slide-in Toggle ----
+// ---- Mobile Nav Dropdown Toggle ----
 function toggleMobileNav() {
   const nav = document.getElementById('navbarNav');
-  const overlay = document.getElementById('navbarOverlay');
   if (!nav) return;
-
-  const isOpen = nav.classList.contains('show');
-  if (isOpen) {
-    nav.classList.remove('show');
-    if (overlay) overlay.classList.remove('show');
-    document.body.style.overflow = '';
-  } else {
-    nav.classList.add('show');
-    if (overlay) overlay.classList.add('show');
-    document.body.style.overflow = 'hidden';
-  }
+  nav.classList.toggle('show');
 }
 
-// Close mobile nav when a link is clicked
+// Close mobile nav when tapping outside the navbar
 document.addEventListener('click', function (e) {
-  if (e.target.closest('.navbar-collapse .nav-link') && window.innerWidth < 992) {
-    const nav = document.getElementById('navbarNav');
-    const overlay = document.getElementById('navbarOverlay');
-    if (nav) nav.classList.remove('show');
-    if (overlay) overlay.classList.remove('show');
-    document.body.style.overflow = '';
-  }
+  if (window.innerWidth >= 992) return;
+  const nav = document.getElementById('navbarNav');
+  if (!nav || !nav.classList.contains('show')) return;
+
+  const navbar = document.getElementById('mainNavbar');
+  if (navbar && navbar.contains(e.target)) return; // inside navbar — ignore
+
+  nav.classList.remove('show');
 });
-
-// ---- Swipe-to-close side nav (touch gesture) ----
-(function () {
-  let touchStartX = 0;
-  let touchCurrentX = 0;
-  let isSwiping = false;
-
-  document.addEventListener('touchstart', function (e) {
-    const nav = document.getElementById('navbarNav');
-    if (!nav || !nav.classList.contains('show')) return;
-    touchStartX = e.touches[0].clientX;
-    isSwiping = true;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', function (e) {
-    if (!isSwiping) return;
-    touchCurrentX = e.touches[0].clientX;
-    const nav = document.getElementById('navbarNav');
-    if (!nav) return;
-
-    const diff = touchCurrentX - touchStartX;
-    // Only track rightward swipe (to close the right-side panel)
-    if (diff > 0) {
-      const translateX = Math.min(diff, 280);
-      nav.style.transform = `translateX(${translateX}px)`;
-      nav.style.transition = 'none';
-    }
-  }, { passive: true });
-
-  document.addEventListener('touchend', function () {
-    if (!isSwiping) return;
-    isSwiping = false;
-    const nav = document.getElementById('navbarNav');
-    if (!nav) return;
-
-    const diff = touchCurrentX - touchStartX;
-    nav.style.transition = '';
-    nav.style.transform = '';
-
-    // If swiped more than 80px to the right, close the nav
-    if (diff > 80) {
-      toggleMobileNav();
-    }
-
-    touchStartX = 0;
-    touchCurrentX = 0;
-  }, { passive: true });
-})();
 
 // ---- Utility Functions ----
 
