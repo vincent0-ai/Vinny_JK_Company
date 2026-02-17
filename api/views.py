@@ -1,5 +1,5 @@
 from rest_framework import generics
-from .models import Services, Product, Order, Booking
+from .models import Services, Product, Order, Booking, Cart, CartItem, Payment
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.db.models.functions import TruncDay, TruncMonth,TruncWeek
@@ -11,8 +11,15 @@ from .serializers import (
     ServicesSerializer,
     ProductSerializer,
     OrderSerializer,
-    BookingSerializer
+    OrderSerializer,
+    BookingSerializer,
+    CartSerializer,
+    CartItemSerializer
 )
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from .utils import MpesaClient, create_stripe_payment_intent
+import json
 
 class ServicesListCreateView(generics.ListCreateAPIView):
     queryset = Services.objects.all()
@@ -383,6 +390,13 @@ AVAILABLE_TIME_SLOTS = [
     "14:00",
     "15:00",
     "16:00",
+    "17:00",
+    "18:00",
+    "19:00",
+    "20:00",
+    "21:00",
+    "22:00",
+    "23:00",
 ]
 #get available slots
 
@@ -410,3 +424,161 @@ def get_available_slots(request):
         "date": booking_date,
         "available_slots": available_slots
     })
+
+    return Response({
+        "date": booking_date,
+        "available_slots": available_slots
+    })
+
+# Cart Views
+
+class CartCreateView(generics.CreateAPIView):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+
+class CartDetailView(generics.RetrieveAPIView):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    lookup_field = 'id'
+
+@api_view(['POST'])
+def add_to_cart(request, cart_id):
+    cart = get_object_or_404(Cart, id=cart_id)
+    product_id = request.data.get('product_id')
+    quantity = int(request.data.get('quantity', 1))
+
+    product = get_object_or_404(Product, id=product_id)
+
+    # Check stock
+    if not product.has_stock(quantity):
+         return Response({"error": "Not enough stock"}, status=status.HTTP_400_BAD_REQUEST)
+
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        defaults={'quantity': quantity}
+    )
+
+    if not created:
+        cart_item.quantity += quantity
+        cart_item.save()
+
+    serializer = CartItemSerializer(cart_item)
+    return Response(serializer.data, status=status.HTTP_201_CREATED) 
+
+class UpdateCartItemView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CartItem.objects.all()
+    serializer_class = CartItemSerializer
+    lookup_field = 'pk' 
+
+    def perform_update(self, serializer):
+        # Optional: check stock on update if quantity increases
+        instance = serializer.instance
+        quantity = serializer.validated_data.get('quantity')
+        
+        if quantity is not None and quantity > instance.quantity:
+            added_quantity = quantity - instance.quantity
+            if not instance.product.has_stock(added_quantity):
+                raise serializers.ValidationError("Not enough stock")
+        
+        serializer.save()
+
+# Payment Views
+@api_view(['POST'])
+def initiate_mpesa_payment(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    phone_number = request.data.get('phone_number')
+    if not phone_number:
+        return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Convert phone number to format 254...
+    if phone_number.startswith('0'):
+        phone_number = '254' + phone_number[1:]
+    
+    mpesa_client = MpesaClient()
+    response = mpesa_client.stk_push(
+        phone_number=phone_number,
+        amount=order.total_price,
+        account_reference=str(order.id),
+        transaction_desc=f"Payment for Order {order.id}"
+    )
+
+    if response and response.get('ResponseCode') == '0':
+        checkout_request_id = response.get('CheckoutRequestID')
+        Payment.objects.create(
+            order=order,
+            transaction_id=checkout_request_id, # Store checkout ID initially
+            payment_method='M-Pesa',
+            amount=order.total_price,
+            status='Pending'
+        )
+        return Response({
+            "message": "STK Push initiated",
+            "checkout_request_id": checkout_request_id
+        })
+    else:
+        return Response({"error": "Failed to initiate STK Push", "details": response}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def mpesa_callback(request):
+    try:
+        data = request.data
+        body = data.get('Body', {}).get('stkCallback', {})
+        result_code = body.get('ResultCode')
+        checkout_request_id = body.get('CheckoutRequestID')
+        
+        # Log the callback data for debugging
+        print(f"M-Pesa Callback Data: {json.dumps(data)}")
+
+        payment = Payment.objects.filter(transaction_id=checkout_request_id).first()
+        if not payment:
+            return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if result_code == 0:
+            payment.status = 'Completed'
+            payment.save()
+            
+            order = payment.order
+            order.is_paid = True
+            order.save()
+
+            # Find actual receipt number if needed
+            # metadata = body.get('CallbackMetadata', {}).get('Item', [])
+            # for item in metadata:
+            #     if item.get('Name') == 'MpesaReceiptNumber':
+            #         payment.transaction_id = item.get('Value') # Update to real receipt?
+            #         payment.save()
+            
+            return Response({"message": "Payment successful"})
+        else:
+            payment.status = 'Failed'
+            payment.save()
+            return Response({"message": "Payment failed"})
+
+    except Exception as e:
+        print(f"M-Pesa Callback Error: {e}")
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def initiate_stripe_payment(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    
+    intent = create_stripe_payment_intent(
+        amount=order.total_price,
+        currency='kes' 
+    )
+
+    if intent:
+         Payment.objects.create(
+            order=order,
+            transaction_id=intent['id'],
+            payment_method='Stripe',
+            amount=order.total_price,
+            status='Pending'
+        )
+         return Response({
+             'client_secret': intent['client_secret'],
+             'payment_intent_id': intent['id']
+         })
+    
+    return Response({"error": "Failed to create payment intent"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

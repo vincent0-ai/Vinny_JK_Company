@@ -1,5 +1,6 @@
 
 from django.db import models
+import uuid
 from django.utils import timezone
 
 class Services(models.Model):
@@ -103,7 +104,50 @@ class Booking(models.Model):
 
 
 
+    
     def __str__(self):
         return f"{self.full_name} - {self.services}"
+
+
+class Cart(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.id)
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
+    
+    @property
+    def total_price(self):
+        return self.product.price * self.quantity
+
+
+class Payment(models.Model):
+    PAYMENT_METHOD_CHOICES = (
+        ('M-Pesa', 'M-Pesa'),
+        ('Stripe', 'Stripe'),
+    )
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Completed', 'Completed'),
+        ('Failed', 'Failed'),
+    )
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
+    transaction_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.payment_method} - {self.amount} - {self.status}"
 
 

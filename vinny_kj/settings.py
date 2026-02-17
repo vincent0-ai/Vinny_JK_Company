@@ -122,3 +122,17 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
+
+# Payment Configuration
+
+# DARAJA (M-Pesa)
+DARAJA_CONSUMER_KEY = '7EDurCQKPApGG2J733Js5E4tDF7dfKJXPgphrYZwEvO6V4Zh'
+DARAJA_CONSUMER_SECRET = 'yQnwwx7BRGZJadgB3YhhEJAy3gVFHRAyD2P8EBEn3r7ZfTxai0k4qNBD4E5ngYim'
+DARAJA_PASSKEY = 'T@n!@Tim#2024' 
+DARAJA_BUSINESS_SHORTCODE = '0115709680' # Ensure it is the Paybill/Till number.
+DARAJA_BASE_URL = 'https://sandbox.safaricom.co.ke' # Use sandbox for testing
+DARAJA_CALLBACK_URL = 'https://mydomain.com/api/payment/mpesa/callback/' # Replace with real domain in production
+
+# STRIPE
+STRIPE_SECRET_KEY = 'sk_test_placeholder'
+STRIPE_PUBLISHABLE_KEY = 'pk_test_placeholder'

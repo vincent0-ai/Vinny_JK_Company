@@ -6,7 +6,9 @@ from .views import (
     OrderCreateView, OrderListView, OrderDetailView,
     BookingCreateView, BookingListView, BookingDetailView,
     confirm_booking, complete_booking,
-    bookings_summary, booking_revenue, daily_bookings, monthly_bookings, weekly_bookings
+    bookings_summary, booking_revenue, daily_bookings, monthly_bookings, weekly_bookings,
+    CartCreateView, CartDetailView, add_to_cart, UpdateCartItemView,
+    initiate_mpesa_payment, mpesa_callback, initiate_stripe_payment
 )
 
 urlpatterns = [
@@ -37,4 +39,15 @@ urlpatterns = [
     path('bookings/daily/', daily_bookings),
     path('bookings/monthly/', monthly_bookings),
     path('bookings/weekly/', weekly_bookings),
+
+    # Cart
+    path('cart/create/', CartCreateView.as_view(), name='cart-create'),
+    path('cart/<uuid:id>/', CartDetailView.as_view(), name='cart-detail'),
+    path('cart/<uuid:cart_id>/items/', add_to_cart, name='add-to-cart'),
+    path('cart/items/<int:pk>/', UpdateCartItemView.as_view(), name='update-cart-item'),
+
+    # Payments
+    path('payment/mpesa/initiate/<int:order_id>/', initiate_mpesa_payment, name='initiate-mpesa'),
+    path('payment/mpesa/callback/', mpesa_callback, name='mpesa-callback'),
+    path('payment/stripe/initiate/<int:order_id>/', initiate_stripe_payment, name='initiate-stripe'),
 ]
