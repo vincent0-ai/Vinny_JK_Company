@@ -4,7 +4,7 @@
    ============================================ */
 
 // ---- Configuration ----
-const API_BASE_URL = '/api'; // Change to full URL if frontend is served separately, e.g. 'http://127.0.0.1:8000/api'
+const API_BASE_URL = '/api';
 
 // ---- Mobile Nav Dropdown Toggle ----
 function toggleMobileNav() {
@@ -13,55 +13,40 @@ function toggleMobileNav() {
   nav.classList.toggle('show');
 }
 
-// Close mobile nav when tapping outside the navbar
 document.addEventListener('click', function (e) {
   if (window.innerWidth >= 992) return;
   const nav = document.getElementById('navbarNav');
   if (!nav || !nav.classList.contains('show')) return;
-
   const navbar = document.getElementById('mainNavbar');
-  if (navbar && navbar.contains(e.target)) return; // inside navbar — ignore
-
+  if (navbar && navbar.contains(e.target)) return;
   nav.classList.remove('show');
 });
 
 // ---- Utility Functions ----
-
-/**
- * Format a number as KSh currency
- */
 function formatPrice(amount) {
   const num = parseFloat(amount);
   if (isNaN(num)) return 'KSh 0';
   return 'KSh ' + num.toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-/**
- * Truncate text to a given length
- */
 function truncateText(text, maxLen) {
   if (!text) return '';
   return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
 }
 
-/**
- * Get a placeholder image if the real one fails to load
- */
 function getImageUrl(imagePath) {
   if (!imagePath) return 'https://via.placeholder.com/400x250?text=No+Image';
-  // If it's a full URL already, return as is
   if (imagePath.startsWith('http')) return imagePath;
-  // Otherwise prefix with base
   return imagePath;
 }
 
-/**
- * Show an alert element briefly
- */
 function showAlert(elementId, message, duration) {
   const el = document.getElementById(elementId);
   if (!el) return;
-  if (message) el.textContent = message;
+  if (message) {
+    const msgSpan = el.querySelector('span:not(.material-icons)') || el;
+    if (msgSpan) msgSpan.textContent = message;
+  }
   el.classList.remove('d-none');
   if (duration) {
     setTimeout(() => el.classList.add('d-none'), duration);
@@ -73,16 +58,14 @@ function hideAlert(elementId) {
   if (el) el.classList.add('d-none');
 }
 
-
 // ---- API Fetch Functions ----
-
 async function fetchServices() {
   try {
     const response = await fetch(`${API_BASE_URL}/services/`);
     if (!response.ok) throw new Error('Failed to fetch services');
     return await response.json();
   } catch (error) {
-    console.warn('API not available, using fallback:', error.message);
+    console.warn('API error:', error.message);
     return null;
   }
 }
@@ -93,7 +76,7 @@ async function fetchProducts() {
     if (!response.ok) throw new Error('Failed to fetch products');
     return await response.json();
   } catch (error) {
-    console.warn('API not available, using fallback:', error.message);
+    console.warn('API error:', error.message);
     return null;
   }
 }
@@ -124,17 +107,127 @@ async function createOrder(orderData) {
   return await response.json();
 }
 
+// ---- Cart Manager ----
+const CartManager = {
+  items: JSON.parse(localStorage.getItem('vinkj_cart')) || [],
+
+  save() {
+    localStorage.setItem('vinkj_cart', JSON.stringify(this.items));
+    this.updateUI();
+  },
+
+  add(product) {
+    const existing = this.items.find(item => item.id === product.id);
+    if (existing) {
+      if (existing.quantity < product.stock) {
+        existing.quantity++;
+      } else {
+        alert('Cannot add more. Max stock reached.');
+        return;
+      }
+    } else {
+      this.items.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        stock: product.stock,
+        quantity: 1
+      });
+    }
+    this.save();
+    this.showFloatingBadgeAnimation();
+  },
+
+  remove(id) {
+    this.items = this.items.filter(item => item.id !== id);
+    this.save();
+  },
+
+  updateQuantity(id, delta) {
+    const item = this.items.find(item => item.id === id);
+    if (item) {
+      const newQty = item.quantity + delta;
+      if (newQty > 0 && newQty <= item.stock) {
+        item.quantity = newQty;
+        this.save();
+      }
+    }
+  },
+
+  getTotal() {
+    return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  },
+
+  getCount() {
+    return this.items.reduce((sum, item) => sum + item.quantity, 0);
+  },
+
+  clear() {
+    this.items = [];
+    this.save();
+  },
+
+  updateUI() {
+    const badge = document.getElementById('cartBadge');
+    const totalDisplay = document.getElementById('cartTotalDisplay');
+    const container = document.getElementById('cartItemsContainer');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    const count = this.getCount();
+
+    if (badge) {
+      badge.textContent = count;
+      badge.classList.toggle('d-none', count === 0);
+    }
+
+    if (totalDisplay) totalDisplay.textContent = formatPrice(this.getTotal());
+    if (checkoutBtn) checkoutBtn.disabled = count === 0;
+
+    if (container) {
+      if (this.items.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5 opacity-50">
+            <span class="material-icons" style="font-size: 3rem;">shopping_basket</span>
+            <p class="mt-2">Your cart is empty</p>
+          </div>
+        `;
+      } else {
+        container.innerHTML = this.items.map(item => `
+          <div class="cart-item-row">
+            <img src="${getImageUrl(item.image)}" class="cart-item-img" alt="${item.name}">
+            <div class="cart-item-info">
+              <div class="cart-item-title">${item.name}</div>
+              <div class="cart-item-price">${formatPrice(item.price)}</div>
+              <div class="qty-control">
+                <button class="btn-qty" onclick="CartManager.updateQuantity(${item.id}, -1)">-</button>
+                <span class="small mx-1">${item.quantity}</span>
+                <button class="btn-qty" onclick="CartManager.updateQuantity(${item.id}, 1)">+</button>
+                <button class="btn btn-link btn-sm text-danger ms-auto p-0" onclick="CartManager.remove(${item.id})">
+                  <span class="material-icons" style="font-size: 1.2rem;">delete_outline</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+  },
+
+  showFloatingBadgeAnimation() {
+    const cartBtn = document.getElementById('cartBtn');
+    if (cartBtn) {
+      cartBtn.classList.add('animate__animated', 'animate__pulse');
+      setTimeout(() => cartBtn.classList.remove('animate__animated', 'animate__pulse'), 500);
+    }
+  }
+};
 
 // ---- Render Functions ----
-
-/**
- * Render a service card
- */
 function renderServiceCard(service, isPreview) {
   const imgUrl = getImageUrl(service.image);
   const desc = isPreview ? truncateText(service.description, 100) : service.description;
   return `
-    <div class="${isPreview ? 'col-md-6 col-lg-4' : 'col-md-6 col-lg-4'}">
+    <div class="col-md-6 col-lg-4">
       <div class="card-custom">
         <img src="${imgUrl}" class="card-img-top" alt="${service.name}" onerror="this.src='https://via.placeholder.com/400x250?text=Service'">
         <div class="card-body">
@@ -144,8 +237,8 @@ function renderServiceCard(service, isPreview) {
         </div>
         <div class="card-footer-custom">
           <a href="services.html#booking" class="btn btn-primary-custom w-100"
-             onclick="sessionStorage.setItem('selectedServiceId', '${service.id}'); sessionStorage.setItem('selectedServiceName', '${service.name}'); sessionStorage.setItem('selectedServicePrice', '${service.price}');">
-            Book This Service
+             onclick="sessionStorage.setItem('selectedServiceId', '${service.id}'); sessionStorage.setItem('selectedServicePrice', '${service.price}');">
+            Book Now
           </a>
         </div>
       </div>
@@ -153,18 +246,18 @@ function renderServiceCard(service, isPreview) {
   `;
 }
 
-/**
- * Render a product card
- */
 function renderProductCard(product, isPreview) {
   const imgUrl = getImageUrl(product.image);
   const desc = isPreview ? truncateText(product.description, 80) : truncateText(product.description, 120);
   const inStock = product.is_available && product.stock_quantity > 0;
-  const stockText = inStock ? `In Stock (${product.stock_quantity} units)` : 'Out of Stock';
+  const stockText = inStock ? `In Stock (${product.stock_quantity})` : 'Out of Stock';
   const stockClass = inStock ? 'in-stock' : 'out-of-stock';
 
   const buttonHtml = inStock
-    ? `<button class="btn btn-primary-custom w-100" onclick="openOrderModal(${product.id}, '${product.name.replace(/'/g, "\\'")}', ${product.price}, ${product.stock_quantity})">Order Now</button>`
+    ? `<button class="btn btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2" 
+               onclick="CartManager.add({id: ${product.id}, name: '${product.name.replace(/'/g, "\\'")}', price: ${product.price}, image: '${product.image}', stock: ${product.stock_quantity}})">
+          <span class="material-icons" style="font-size: 1.2rem;">add_shopping_cart</span> Add to Cart
+       </button>`
     : `<button class="btn btn-dark-custom w-100" disabled>Out of Stock</button>`;
 
   return `
@@ -185,476 +278,191 @@ function renderProductCard(product, isPreview) {
   `;
 }
 
-
-// ---- Page Initialization ----
-
-// Store fetched data for search/filter
-let allProducts = [];
-let allServices = [];
-
+// ---- Initialization ----
 document.addEventListener('DOMContentLoaded', async () => {
+  CartManager.updateUI();
 
-  // ---- Home Page: Services Preview ----
-  const servicesPreviewContainer = document.getElementById('servicesPreviewContainer');
-  if (servicesPreviewContainer) {
-    const services = await fetchServices();
-    if (services && services.length > 0) {
-      allServices = services;
-      const previewServices = services.slice(0, 3);
-      servicesPreviewContainer.innerHTML = previewServices.map(s => renderServiceCard(s, true)).join('');
-    } else {
-      servicesPreviewContainer.innerHTML = `
-        <div class="no-results">
-          <span class="material-icons">build_circle</span>
-          <h5>Services coming soon</h5>
-          <p>We're updating our service listings. Check back shortly.</p>
-        </div>
-      `;
-    }
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', () => {
+      const offcanvasEl = document.getElementById('cartOffcanvas');
+      const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl) || new bootstrap.Offcanvas(offcanvasEl);
+      offcanvas.hide();
+      openCheckoutModal();
+    });
   }
 
-  // ---- Home Page: Products Preview ----
-  const productsPreviewContainer = document.getElementById('productsPreviewContainer');
-  if (productsPreviewContainer) {
+  // Load Products
+  const productsContainer = document.getElementById('productsContainer');
+  const productsPreview = document.getElementById('productsPreviewContainer');
+  if (productsContainer || productsPreview) {
     const products = await fetchProducts();
-    if (products && products.length > 0) {
-      allProducts = products;
-      const previewProducts = products.filter(p => p.is_available).slice(0, 3);
-      if (previewProducts.length > 0) {
-        productsPreviewContainer.innerHTML = previewProducts.map(p => renderProductCard(p, true)).join('');
-      } else {
-        productsPreviewContainer.innerHTML = products.slice(0, 3).map(p => renderProductCard(p, true)).join('');
-      }
-    } else {
-      productsPreviewContainer.innerHTML = `
-        <div class="no-results">
-          <span class="material-icons">inventory_2</span>
-          <h5>Products coming soon</h5>
-          <p>Our product catalog is being updated. Check back shortly.</p>
-        </div>
-      `;
+    if (products) {
+      if (productsContainer) productsContainer.innerHTML = products.map(p => renderProductCard(p, false)).join('');
+      if (productsPreview) productsPreview.innerHTML = products.filter(p => p.is_available).slice(0, 3).map(p => renderProductCard(p, true)).join('');
     }
   }
 
-  // ---- Services Page: Full Listing ----
+  // Load Services
   const servicesContainer = document.getElementById('servicesContainer');
-  if (servicesContainer && !servicesPreviewContainer) {
+  const servicesPreview = document.getElementById('servicesPreviewContainer');
+  if (servicesContainer || servicesPreview) {
     const services = await fetchServices();
-    if (services && services.length > 0) {
-      allServices = services;
-      servicesContainer.innerHTML = services.map(s => renderServiceCard(s, false)).join('');
-    } else {
-      servicesContainer.innerHTML = '';
-      const noServices = document.getElementById('noServicesFound');
-      if (noServices) noServices.classList.remove('d-none');
+    if (services) {
+      if (servicesContainer) servicesContainer.innerHTML = services.map(s => renderServiceCard(s, false)).join('');
+      if (servicesPreview) servicesPreview.innerHTML = services.slice(0, 3).map(s => renderServiceCard(s, true)).join('');
     }
   }
 
-  // ---- Services Page: Populate Booking Dropdown ----
-  const bookingServiceSelect = document.getElementById('bookingService');
-  if (bookingServiceSelect) {
-    let services = allServices;
-    if (!services || services.length === 0) {
-      services = await fetchServices();
-      if (services) allServices = services;
-    }
-    if (services && services.length > 0) {
-      bookingServiceSelect.innerHTML = '<option value="" disabled selected>-- Select a Service --</option>';
-      services.forEach(s => {
-        const option = document.createElement('option');
-        option.value = s.id;
-        option.textContent = `${s.name} - ${formatPrice(s.price)}`;
-        option.dataset.price = s.price;
-        bookingServiceSelect.appendChild(option);
-      });
+  // Booking logic
+  const bookingForm = document.getElementById('bookingForm');
+  if (bookingForm) {
+    const bookingServiceSelect = document.getElementById('bookingService');
+    const services = await fetchServices();
+    if (services && bookingServiceSelect) {
+      bookingServiceSelect.innerHTML = '<option value="" disabled selected>-- Select a Service --</option>' +
+        services.map(s => `<option value="${s.id}" data-price="${s.price}">${s.name} - ${formatPrice(s.price)}</option>`).join('');
 
-      // Pre-select if coming from a card click
       const savedId = sessionStorage.getItem('selectedServiceId');
       if (savedId) {
         bookingServiceSelect.value = savedId;
-        const priceDisplay = document.getElementById('bookingPrice');
         const savedPrice = sessionStorage.getItem('selectedServicePrice');
-        if (priceDisplay && savedPrice) priceDisplay.textContent = formatPrice(savedPrice);
+        if (savedPrice) document.getElementById('bookingPrice').textContent = formatPrice(savedPrice);
         sessionStorage.removeItem('selectedServiceId');
-        sessionStorage.removeItem('selectedServiceName');
         sessionStorage.removeItem('selectedServicePrice');
       }
-    } else {
-      bookingServiceSelect.innerHTML = '<option value="" disabled selected>-- No services available yet --</option>';
+
+      bookingServiceSelect.addEventListener('change', function () {
+        const selected = this.options[this.selectedIndex];
+        document.getElementById('bookingPrice').textContent = formatPrice(selected.dataset.price);
+      });
     }
 
-    // Update price on change
-    bookingServiceSelect.addEventListener('change', function () {
-      const selected = this.options[this.selectedIndex];
-      const priceDisplay = document.getElementById('bookingPrice');
-      if (priceDisplay && selected.dataset.price) {
-        priceDisplay.textContent = formatPrice(selected.dataset.price);
+    bookingForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('bookingSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      try {
+        const price = bookingServiceSelect.options[bookingServiceSelect.selectedIndex].dataset.price;
+        await createBooking({
+          services: bookingServiceSelect.value,
+          total_price: parseFloat(price),
+          full_name: document.getElementById('bookingName').value,
+          phone_number: document.getElementById('bookingPhone').value,
+          vehicle_model: document.getElementById('bookingVehicle').value,
+          number_plate: document.getElementById('bookingPlate').value,
+          booking_date: document.getElementById('bookingDate').value,
+          booking_time: document.getElementById('bookingTime').value,
+          additional_notes: document.getElementById('bookingNotes').value
+        });
+        showAlert('bookingSuccess', 'Booking submitted!', 8000);
+        bookingForm.reset();
+      } catch (err) {
+        showAlert('bookingError', err.message, 6000);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Booking';
       }
     });
   }
-
-  // ---- Products Page: Full Listing ----
-  const productsContainer = document.getElementById('productsContainer');
-  if (productsContainer && !productsPreviewContainer) {
-    const products = await fetchProducts();
-    if (products && products.length > 0) {
-      allProducts = products;
-      productsContainer.innerHTML = products.map(p => renderProductCard(p, false)).join('');
-    } else {
-      productsContainer.innerHTML = `
-        <div class="no-results">
-          <span class="material-icons">inventory_2</span>
-          <h5>No products available yet</h5>
-          <p>Our product catalog is being updated. Check back soon.</p>
-        </div>
-      `;
-    }
-  }
-
-  // ---- Products Page: Search & Filter ----
-  const productSearch = document.getElementById('productSearch');
-  const productFilter = document.getElementById('productFilter');
-
-  function filterProducts() {
-    if (!productsContainer || allProducts.length === 0) return;
-    const searchTerm = (productSearch ? productSearch.value : '').toLowerCase();
-    const filterVal = productFilter ? productFilter.value : 'all';
-
-    let filtered = allProducts.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchTerm) || (p.description && p.description.toLowerCase().includes(searchTerm));
-      const matchesFilter = filterVal === 'all' || (filterVal === 'in-stock' && p.is_available && p.stock_quantity > 0);
-      return matchesSearch && matchesFilter;
-    });
-
-    const noResults = document.getElementById('noProductsFound');
-    if (filtered.length > 0) {
-      productsContainer.innerHTML = filtered.map(p => renderProductCard(p, false)).join('');
-      productsContainer.classList.remove('d-none');
-      if (noResults) noResults.classList.add('d-none');
-    } else {
-      productsContainer.innerHTML = '';
-      if (noResults) noResults.classList.remove('d-none');
-    }
-  }
-
-  if (productSearch) productSearch.addEventListener('input', filterProducts);
-  if (productFilter) productFilter.addEventListener('change', filterProducts);
-
-  // ---- About Page: Dynamic Gallery ----
-  const galleryContainer = document.getElementById('galleryContainer');
-  if (galleryContainer) {
-    // Local gallery images as fallback
-    const localGalleryImages = [
-      { url: 'gallery/468725816_541147015457920_3612435359203564489_n.jpg', alt: 'Professional Tinting Work', type: 'Our Work' },
-      { url: 'gallery/480592649_603797522526202_2276869735353109726_n.jpg', alt: 'Car Window Tinting', type: 'Service' },
-      { url: 'gallery/480815279_603797535859534_1600990838320939445_n.jpg', alt: 'PPF Installation', type: 'Service' },
-      { url: 'gallery/480905254_607702505469037_4458766742337825351_n.jpg', alt: 'Vehicle Wrapping', type: 'Our Work' },
-      { url: 'gallery/480929778_607714545467833_126299976784157875_n.jpg', alt: 'Auto Detailing', type: 'Service' },
-      { url: 'gallery/481079568_611245595114728_7580914725134856650_n.jpg', alt: 'Customer Vehicle', type: 'Our Work' },
-      { url: 'gallery/481112480_607702495469038_7962479863961912081_n.jpg', alt: 'Tint Film Application', type: 'Service' },
-      { url: 'gallery/481180506_607709135468374_190577655651118514_n.jpg', alt: 'Workshop View', type: 'Our Team' },
-      { url: 'gallery/482022180_608555885383699_9034834043495382105_n.jpg', alt: 'Completed Project', type: 'Our Work' },
-      { url: 'gallery/482049731_613154678257153_5709104441709608614_n.jpg', alt: 'Car Wrapping Project', type: 'Service' },
-      { url: 'gallery/482082895_615241818048439_805679096993353287_n.jpg', alt: 'Precision Work', type: 'Our Work' },
-      { url: 'gallery/482207449_613079558264665_555383075837254529_n.jpg', alt: 'PPF Protection', type: 'Service' },
-      { url: 'gallery/482221472_607709215468366_6249463257400217156_n.jpg', alt: 'Our Team at Work', type: 'Our Team' },
-      { url: 'gallery/482348046_611829251723029_2563584746158765607_n.jpg', alt: 'Quality Results', type: 'Our Work' },
-      { url: 'gallery/483525984_617366267835994_5528536576646859471_n.jpg', alt: 'Vehicle Enhancement', type: 'Service' },
-      { url: 'gallery/484059054_617059051200049_1451741418312231565_n.jpg', alt: 'Showroom Finish', type: 'Our Work' },
-      { url: 'gallery/484105468_613154584923829_4067537156397048004_n.jpg', alt: 'Customer Satisfaction', type: 'Our Work' },
-      { url: 'gallery/484151488_617082407864380_3666535985921159564_n.jpg', alt: 'Professional Setup', type: 'Our Team' },
-      { url: 'gallery/484216410_617241604515127_8213988536216727032_n.jpg', alt: 'Tinting Process', type: 'Service' },
-      { url: 'gallery/484483825_617366271169327_19708125892829820_n.jpg', alt: 'Final Touches', type: 'Our Work' },
-      { url: 'gallery/585888932_818250024414283_8713746235952595483_n.jpg', alt: 'Latest Project', type: 'Our Work' },
-      { url: 'gallery/586841638_818251157747503_1054758658956930288_n.jpg', alt: 'Premium Service', type: 'Service' },
-      { url: 'gallery/587224962_820419377530681_6438928768554223655_n.jpg', alt: 'Expert Installation', type: 'Our Work' },
-      { url: 'gallery/593621673_824783323760953_6623332114128118648_n.jpg', alt: 'Customer Car', type: 'Our Work' },
-    ];
-
-    try {
-      const [services, products] = await Promise.all([fetchServices(), fetchProducts()]);
-      const images = [];
-
-      if (services) {
-        services.forEach(s => {
-          if (s.image) images.push({ url: s.image, alt: s.name, type: 'Service' });
-        });
-      }
-      if (products) {
-        products.forEach(p => {
-          if (p.image) images.push({ url: p.image, alt: p.name, type: 'Product' });
-        });
-      }
-
-      // Use API images if available, otherwise use local gallery
-      const finalImages = images.length > 0 ? images : localGalleryImages;
-
-      const spinner = galleryContainer.querySelector('.text-center');
-      if (spinner) spinner.remove();
-      const loadingSpinner = galleryContainer.querySelector('.loading-spinner');
-      if (loadingSpinner) loadingSpinner.remove();
-
-      const noGallery = document.getElementById('noGalleryItems');
-
-      galleryContainer.innerHTML = finalImages.map(img => `
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="card-custom gallery-card" style="overflow:hidden; border-radius:12px;">
-            <img src="${img.url}" alt="${img.alt}" class="card-img-top" style="height:200px; object-fit:cover;" loading="lazy">
-            <div class="card-body p-2 text-center">
-              <small class="text-muted">${img.type}</small>
-              <h6 class="mb-0 mt-1" style="font-size:0.85rem;">${img.alt}</h6>
-            </div>
-          </div>
-        </div>
-      `).join('');
-      if (noGallery) noGallery.classList.add('d-none');
-    } catch (err) {
-      console.error('Gallery load error, using local images:', err);
-      const spinner = galleryContainer.querySelector('.text-center');
-      if (spinner) spinner.remove();
-      const loadingSpinner = galleryContainer.querySelector('.loading-spinner');
-      if (loadingSpinner) loadingSpinner.remove();
-
-      galleryContainer.innerHTML = localGalleryImages.map(img => `
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="card-custom gallery-card" style="overflow:hidden; border-radius:12px;">
-            <img src="${img.url}" alt="${img.alt}" class="card-img-top" style="height:200px; object-fit:cover;" loading="lazy">
-            <div class="card-body p-2 text-center">
-              <small class="text-muted">${img.type}</small>
-              <h6 class="mb-0 mt-1" style="font-size:0.85rem;">${img.alt}</h6>
-            </div>
-          </div>
-        </div>
-      `).join('');
-      const noGallery = document.getElementById('noGalleryItems');
-      if (noGallery) noGallery.classList.add('d-none');
-    }
-  }
-
-  // ---- Set min date for booking ----
-  const bookingDate = document.getElementById('bookingDate');
-  if (bookingDate) {
-    const today = new Date().toISOString().split('T')[0];
-    bookingDate.setAttribute('min', today);
-  }
 });
 
-
-// ---- Booking Form Submission ----
-document.addEventListener('submit', async function (e) {
-  if (e.target.id === 'bookingForm') {
-    e.preventDefault();
-    const submitBtn = document.getElementById('bookingSubmitBtn');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
-    hideAlert('bookingSuccess');
-    hideAlert('bookingError');
-
-    const serviceId = document.getElementById('bookingService').value;
-    const selectedOption = document.getElementById('bookingService').options[document.getElementById('bookingService').selectedIndex];
-    const price = selectedOption.dataset.price || 0;
-
-    const bookingData = {
-      services: serviceId,
-      total_price: parseFloat(price),
-      full_name: document.getElementById('bookingName').value,
-      phone_number: document.getElementById('bookingPhone').value,
-      vehicle_model: document.getElementById('bookingVehicle').value,
-      number_plate: document.getElementById('bookingPlate').value,
-      booking_date: document.getElementById('bookingDate').value,
-      booking_time: document.getElementById('bookingTime').value,
-      additional_notes: document.getElementById('bookingNotes').value
-    };
-
-    try {
-      await createBooking(bookingData);
-      showAlert('bookingSuccess', 'Your booking has been submitted successfully! We\'ll confirm your appointment shortly.', 8000);
-      e.target.reset();
-      const priceDisplay = document.getElementById('bookingPrice');
-      if (priceDisplay) priceDisplay.textContent = '--';
-    } catch (error) {
-      showAlert('bookingError', error.message || 'Something went wrong. Please try again.', 6000);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Booking';
-    }
-  }
-});
-
-
-// ---- Payment Method Selection ----
+// ---- Checkout Modal logic ----
 let selectedPaymentMethod = null;
 
-function selectPayment(method) {
-  selectedPaymentMethod = method;
+function openCheckoutModal() {
+  const modalEl = document.getElementById('orderModal');
+  if (!modalEl) return;
+  const itemsList = document.getElementById('checkoutItemsList');
+  if (itemsList) {
+    itemsList.innerHTML = CartManager.items.map(item => `
+      <div class="d-flex justify-content-between align-items-center mb-2 small">
+        <span>${item.name} x ${item.quantity}</span>
+        <span>${formatPrice(item.price * item.quantity)}</span>
+      </div>
+    `).join('');
+  }
+  document.getElementById('checkoutTotalDisplay').textContent = formatPrice(CartManager.getTotal());
+  selectedPaymentMethod = null;
+  document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+  if (document.getElementById('stkPrompt')) document.getElementById('stkPrompt').classList.add('d-none');
+  new bootstrap.Modal(modalEl).show();
+}
 
-  // Update radio buttons
+/**
+ * Global function for payment selection (called by onclick in HTML)
+ */
+window.selectPayment = function (method) {
+  selectedPaymentMethod = method;
+  document.querySelectorAll('.payment-option').forEach(el => {
+    el.classList.toggle('selected', el.id === (method === 'online' ? 'payOnlineOption' : 'payDeliveryOption'));
+  });
   const onlineRadio = document.getElementById('payOnline');
   const deliveryRadio = document.getElementById('payDelivery');
-  if (onlineRadio) onlineRadio.checked = method === 'online';
-  if (deliveryRadio) deliveryRadio.checked = method === 'delivery';
+  if (onlineRadio) onlineRadio.checked = (method === 'online');
+  if (deliveryRadio) deliveryRadio.checked = (method === 'delivery');
+};
 
-  // Update visual selection
-  const onlineOption = document.getElementById('payOnlineOption');
-  const deliveryOption = document.getElementById('payDeliveryOption');
-  if (onlineOption) onlineOption.classList.toggle('selected', method === 'online');
-  if (deliveryOption) deliveryOption.classList.toggle('selected', method === 'delivery');
-
-  // Show/hide payment detail panels
-  const onlineDetails = document.getElementById('onlinePaymentDetails');
-  const deliveryNote = document.getElementById('deliveryPaymentNote');
-  if (onlineDetails) onlineDetails.classList.toggle('d-none', method !== 'online');
-  if (deliveryNote) deliveryNote.classList.toggle('d-none', method !== 'delivery');
-
-  // Make M-Pesa code required only for online
-  const mpesaInput = document.getElementById('orderMpesaCode');
-  if (mpesaInput) mpesaInput.required = method === 'online';
-}
-
-// ---- Order Modal Logic ----
-let currentOrderProduct = null;
-
-function openOrderModal(productId, productName, unitPrice, stockQty) {
-  currentOrderProduct = { id: productId, name: productName, price: unitPrice, stock: stockQty };
-
-  document.getElementById('orderGoodsId').value = productId;
-  document.getElementById('orderProductName').textContent = productName;
-  document.getElementById('orderUnitPrice').textContent = 'Unit Price: ' + formatPrice(unitPrice);
-  document.getElementById('orderTotalDisplay').textContent = formatPrice(unitPrice);
-  document.getElementById('orderQuantity').value = 1;
-  document.getElementById('orderQuantity').max = stockQty;
-
-  // Reset form fields
-  document.getElementById('orderForm').reset();
-  document.getElementById('orderGoodsId').value = productId;
-  document.getElementById('orderQuantity').value = 1;
-
-  // Reset payment selection
-  selectedPaymentMethod = null;
-  const onlineOption = document.getElementById('payOnlineOption');
-  const deliveryOption = document.getElementById('payDeliveryOption');
-  if (onlineOption) onlineOption.classList.remove('selected');
-  if (deliveryOption) deliveryOption.classList.remove('selected');
-  const onlineDetails = document.getElementById('onlinePaymentDetails');
-  const deliveryNote = document.getElementById('deliveryPaymentNote');
-  if (onlineDetails) onlineDetails.classList.add('d-none');
-  if (deliveryNote) deliveryNote.classList.add('d-none');
-
-  hideAlert('orderSuccess');
-  hideAlert('orderError');
-
-  const modal = new bootstrap.Modal(document.getElementById('orderModal'));
-  modal.show();
-}
-
-// Update total on quantity change
-document.addEventListener('input', function (e) {
-  if (e.target.id === 'orderQuantity' && currentOrderProduct) {
-    const qty = parseInt(e.target.value) || 1;
-    const total = qty * currentOrderProduct.price;
-    document.getElementById('orderTotalDisplay').textContent = formatPrice(total);
-  }
-});
-
-// Order Submit
 document.addEventListener('click', async function (e) {
   if (e.target.id === 'orderSubmitBtn') {
     const form = document.getElementById('orderForm');
-    if (!form.checkValidity()) {
-      form.reportValidity();
-      return;
-    }
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    if (!selectedPaymentMethod) { alert('Please select a payment method.'); return; }
 
     const submitBtn = e.target;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Placing Order...';
-    hideAlert('orderSuccess');
-    hideAlert('orderError');
+    submitBtn.textContent = 'Processing...';
 
-    const qty = parseInt(document.getElementById('orderQuantity').value) || 1;
-
-    // Validate payment method selection
-    if (!selectedPaymentMethod) {
-      showAlert('orderError', 'Please select a payment method.', 4000);
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Place Order';
-      return;
-    }
-
-    // Validate M-Pesa code for online payment
-    const mpesaCode = document.getElementById('orderMpesaCode');
-    if (selectedPaymentMethod === 'online' && mpesaCode && !mpesaCode.value.trim()) {
-      showAlert('orderError', 'Please enter your M-Pesa transaction code.', 4000);
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Place Order';
-      return;
-    }
-
+    const cartSummary = CartManager.items.map(i => `${i.name} (${i.quantity})`).join(', ');
     const orderData = {
-      product: parseInt(document.getElementById('orderGoodsId').value),
-      quantity: qty,
-      total_price: qty * currentOrderProduct.price,
+      product: CartManager.items[0].id,
+      quantity: CartManager.items[0].quantity,
+      total_price: CartManager.getTotal(),
       full_name: document.getElementById('orderName').value,
       phone_number: document.getElementById('orderPhone').value,
-      vehicle_make: document.getElementById('orderVehicleMake').value,
-      vehicle_model: document.getElementById('orderVehicleModel').value,
-      vehicle_year: document.getElementById('orderVehicleYear').value,
-      auto_part: document.getElementById('orderAutoPart').value,
       estate: document.getElementById('orderEstate').value,
       street_address: document.getElementById('orderStreet').value,
-      payment_method: selectedPaymentMethod,
-      mpesa_code: selectedPaymentMethod === 'online' && mpesaCode ? mpesaCode.value.trim() : null
+      auto_part: `Cart Order: ${cartSummary}`,
+      payment_method: selectedPaymentMethod === 'online' ? 'M-Pesa' : 'Delivery'
     };
 
     try {
-      await createOrder(orderData);
-      showAlert('orderSuccess', 'Your order has been placed successfully! We\'ll contact you shortly to confirm.', 8000);
-      form.reset();
-    } catch (error) {
-      showAlert('orderError', error.message || 'Something went wrong. Please try again.', 6000);
+      const order = await createOrder(orderData);
+      if (selectedPaymentMethod === 'online') {
+        const stkPrompt = document.getElementById('stkPrompt');
+        if (stkPrompt) stkPrompt.classList.remove('d-none');
+        await fetch(`${API_BASE_URL}/payments/initiate-mpesa/${order.id}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone_number: orderData.phone_number })
+        });
+        showAlert('orderSuccess', 'STK Push sent! Check your phone.', 10000);
+      } else {
+        showAlert('orderSuccess', 'Order placed!', 8000);
+      }
+      CartManager.clear();
+      setTimeout(() => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+        if (modal) modal.hide();
+      }, 3000);
+    } catch (err) {
+      showAlert('orderError', err.message, 6000);
     } finally {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Place Order';
+      submitBtn.textContent = 'Confirm Order';
     }
   }
 });
 
-
-// ---- Contact Form (basic - no backend endpoint yet) ----
-document.addEventListener('submit', function (e) {
-  if (e.target.id === 'contactForm') {
-    e.preventDefault();
-    alert('Thank you for your message! We will get back to you shortly.');
-    e.target.reset();
-  }
-});
-
-
-// ---- Navbar Scroll Effect ----
+// Navbar scroll effect
 window.addEventListener('scroll', function () {
   const navbar = document.getElementById('mainNavbar');
   if (navbar) {
-    if (window.scrollY > 50) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
-    }
+    navbar.classList.toggle('scrolled', window.scrollY > 50);
   }
-
-  // Back to top button
   const backToTop = document.getElementById('backToTop');
   if (backToTop) {
-    if (window.scrollY > 400) {
-      backToTop.classList.add('show');
-    } else {
-      backToTop.classList.remove('show');
-    }
-  }
-});
-
-// Back to top click
-document.addEventListener('click', function (e) {
-  if (e.target.closest('#backToTop')) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    backToTop.classList.toggle('show', window.scrollY > 400);
   }
 });

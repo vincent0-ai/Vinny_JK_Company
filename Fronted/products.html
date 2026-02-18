@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,50 +9,64 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    body { font-family: 'Inter', 'Segoe UI', sans-serif; }
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+
     .payment-option {
       cursor: pointer;
-      border: 2px solid rgba(255,255,255,0.12);
+      border: 2px solid rgba(255, 255, 255, 0.12);
       border-radius: 8px;
       padding: 1rem;
       transition: all 0.3s ease;
-      background: rgba(255,255,255,0.04);
+      background: rgba(255, 255, 255, 0.04);
     }
+
     .payment-option:hover {
       border-color: rgba(232, 168, 37, 0.4);
       background: rgba(232, 168, 37, 0.06);
     }
+
     .payment-option.selected {
       border-color: #e8a825;
       background: rgba(232, 168, 37, 0.1);
     }
+
     .payment-option-inner {
       display: flex;
       align-items: center;
       gap: 0.8rem;
     }
+
     .payment-option-inner .material-icons {
       font-size: 1.6rem;
       color: #e8a825;
     }
+
     .payment-option-inner h6 {
       color: #f5f5f5;
       font-weight: 600;
     }
+
     .payment-option-inner small {
-      color: rgba(255,255,255,0.5);
+      color: rgba(255, 255, 255, 0.5);
       font-size: 0.82rem;
     }
   </style>
 </head>
+
 <body>
 
   <!-- ============ NAVBAR ============ -->
   <nav class="navbar navbar-expand-lg fixed-top" id="mainNavbar">
     <div class="container">
-      <a class="navbar-brand" href="index.html"><img src="favicon.ico" alt="" class="brand-icon">VIN-KJ <span>AUTO</span> SERVICES</a>
+      <a class="navbar-brand" href="index.html"><img src="favicon.ico" alt="" class="brand-icon">VIN-KJ
+        <span>AUTO</span> SERVICES</a>
       <button class="navbar-toggler" type="button" onclick="toggleMobileNav()">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -115,158 +130,131 @@
     </div>
   </section>
 
-  <!-- ============ ORDER MODAL ============ -->
+  <!-- ============ CHECKOUT MODAL ============ -->
   <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="orderModalLabel">Place Order</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header modal-header-compact border-bottom bg-dark">
+          <h5 class="modal-title" id="orderModalLabel">Checkout</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body modal-body-compact">
           <!-- Success / Error Alerts -->
           <div class="alert alert-success alert-custom d-none" id="orderSuccess" role="alert">
-            Your order has been placed successfully! We'll contact you shortly to confirm.
+            <div class="d-flex align-items-center gap-2">
+              <span class="material-icons">check_circle</span>
+              <span>Your order has been placed successfully! We'll contact you shortly.</span>
+            </div>
           </div>
           <div class="alert alert-danger alert-custom d-none" id="orderError" role="alert">
-            Something went wrong. Please try again.
+            <div class="d-flex align-items-center gap-2">
+              <span class="material-icons">error</span>
+              <span id="orderErrorMsg">Something went wrong. Please try again.</span>
+            </div>
           </div>
 
           <form id="orderForm">
-            <input type="hidden" id="orderGoodsId">
-            <div class="row g-3">
-              <!-- Product Info -->
-              <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center p-3 rounded" style="background: var(--bg-light);">
+            <div class="row g-4">
+              <!-- Left Column: Items Summary -->
+              <div class="col-lg-5 order-lg-2">
+                <div class="summary-card">
+                  <h6 class="mb-3 d-flex align-items-center gap-2">
+                    <span class="material-icons" style="font-size: 1.1rem;">shopping_bag</span>
+                    Order Summary
+                  </h6>
+                  <div id="checkoutItemsList" class="mb-3">
+                    <!-- Loaded dynamically -->
+                  </div>
+                  <div class="border-top pt-3 mt-3">
+                    <div class="d-flex justify-content-between fw-bold">
+                      <span>Total</span>
+                      <span class="text-secondary-custom" id="checkoutTotalDisplay">KSh 0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: Shipping & Payment -->
+              <div class="col-lg-7 order-lg-1">
+                <h6 class="mb-3 d-flex align-items-center gap-2">
+                  <span class="material-icons" style="font-size: 1.1rem;">person</span>
+                  Customer Information
+                </h6>
+                <div class="checkout-grid mb-3">
                   <div>
-                    <h6 class="mb-1" id="orderProductName">Product Name</h6>
-                    <span class="text-muted" id="orderUnitPrice">Unit Price: KSh 0</span>
+                    <label for="orderName" class="form-label-sm">Full Name</label>
+                    <input type="text" class="form-control form-control-sm" id="orderName" placeholder="Full Name"
+                      required>
                   </div>
-                  <div class="card-price mb-0" id="orderTotalDisplay">KSh 0</div>
+                  <div>
+                    <label for="orderPhone" class="form-label-sm">Phone Number</label>
+                    <input type="tel" class="form-control form-control-sm" id="orderPhone" placeholder="07XX XXX XXX"
+                      required>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Quantity -->
-              <div class="col-md-4">
-                <label for="orderQuantity" class="form-label">Quantity</label>
-                <input type="number" class="form-control" id="orderQuantity" min="1" value="1" required>
-              </div>
+                <h6 class="mb-3 d-flex align-items-center gap-2 mt-4">
+                  <span class="material-icons" style="font-size: 1.1rem;">local_shipping</span>
+                  Delivery Details
+                </h6>
+                <div class="checkout-grid mb-3">
+                  <div>
+                    <label for="orderEstate" class="form-label-sm">Estate / Area</label>
+                    <input type="text" class="form-control form-control-sm" id="orderEstate"
+                      placeholder="e.g. Westlands" required>
+                  </div>
+                  <div>
+                    <label for="orderStreet" class="form-label-sm">Street / House No.</label>
+                    <input type="text" class="form-control form-control-sm" id="orderStreet"
+                      placeholder="e.g. 123 Main St" required>
+                  </div>
+                </div>
 
-              <!-- Full Name -->
-              <div class="col-md-8">
-                <label for="orderName" class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="orderName" placeholder="John Doe" required>
-              </div>
-
-              <!-- Phone -->
-              <div class="col-md-6">
-                <label for="orderPhone" class="form-label">Phone Number</label>
-                <input type="tel" class="form-control" id="orderPhone" placeholder="+254 7XX XXX XXX" required>
-              </div>
-
-              <!-- Vehicle Make -->
-              <div class="col-md-6">
-                <label for="orderVehicleMake" class="form-label">Vehicle Make</label>
-                <input type="text" class="form-control" id="orderVehicleMake" placeholder="e.g. Toyota">
-              </div>
-
-              <!-- Vehicle Model -->
-              <div class="col-md-6">
-                <label for="orderVehicleModel" class="form-label">Vehicle Model</label>
-                <input type="text" class="form-control" id="orderVehicleModel" placeholder="e.g. Corolla">
-              </div>
-
-              <!-- Vehicle Year -->
-              <div class="col-md-6">
-                <label for="orderVehicleYear" class="form-label">Vehicle Year</label>
-                <input type="text" class="form-control" id="orderVehicleYear" placeholder="e.g. 2020">
-              </div>
-
-              <!-- Auto Part -->
-              <div class="col-12">
-                <label for="orderAutoPart" class="form-label">Auto Part Description (optional)</label>
-                <input type="text" class="form-control" id="orderAutoPart" placeholder="Specify exact part if needed">
-              </div>
-
-              <!-- Estate -->
-              <div class="col-md-6">
-                <label for="orderEstate" class="form-label">Estate / Area</label>
-                <input type="text" class="form-control" id="orderEstate" placeholder="e.g. Westlands" required>
-              </div>
-
-              <!-- Street Address -->
-              <div class="col-md-6">
-                <label for="orderStreet" class="form-label">Street Address</label>
-                <input type="text" class="form-control" id="orderStreet" placeholder="e.g. 123 Main St" required>
-              </div>
-
-              <!-- Payment Method -->
-              <div class="col-12">
-                <label class="form-label">Payment Method</label>
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <div class="payment-option" id="payOnlineOption" onclick="selectPayment('online')">
+                <h6 class="mb-3 d-flex align-items-center gap-2 mt-4">
+                  <span class="material-icons" style="font-size: 1.1rem;">payments</span>
+                  Payment Method
+                </h6>
+                <div class="row g-2 mb-4">
+                  <div class="col-6">
+                    <div class="payment-option p-2" id="payOnlineOption" onclick="selectPayment('online')">
                       <input type="radio" name="paymentMethod" id="payOnline" value="online" class="d-none">
-                      <div class="payment-option-inner">
-                        <span class="material-icons">payment</span>
-                        <div>
-                          <h6 class="mb-0">Pay Online (M-Pesa)</h6>
-                          <small>Pay now before delivery</small>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="material-icons" style="font-size:1.2rem;">payment</span>
+                        <div style="line-height:1.2">
+                          <div class="fw-bold" style="font-size:0.85rem;">M-Pesa STK</div>
+                          <small style="font-size:0.7rem; opacity:0.6;">Pay Now</small>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="col-md-6">
-                    <div class="payment-option" id="payDeliveryOption" onclick="selectPayment('delivery')">
+                  <div class="col-6">
+                    <div class="payment-option p-2" id="payDeliveryOption" onclick="selectPayment('delivery')">
                       <input type="radio" name="paymentMethod" id="payDelivery" value="delivery" class="d-none">
-                      <div class="payment-option-inner">
-                        <span class="material-icons">local_shipping</span>
-                        <div>
-                          <h6 class="mb-0">Pay on Delivery</h6>
-                          <small>Cash or M-Pesa on arrival</small>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="material-icons" style="font-size:1.2rem;">local_shipping</span>
+                        <div style="line-height:1.2">
+                          <div class="fw-bold" style="font-size:0.85rem;">COD</div>
+                          <small style="font-size:0.7rem; opacity:0.6;">On Arrival</small>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- Online Payment Details (shown when Pay Online selected) -->
-              <div class="col-12 d-none" id="onlinePaymentDetails">
-                <div class="p-3 rounded" style="background: rgba(232, 168, 37, 0.1); border: 1px solid rgba(232, 168, 37, 0.25);">
-                  <h6 class="mb-2" style="color: var(--secondary);">M-Pesa Payment Instructions</h6>
-                  <ol class="mb-2" style="font-size: 0.9rem; padding-left: 1.2rem; color: rgba(255,255,255,0.75);">
-                    <li>Go to M-Pesa on your phone</li>
-                    <li>Select <strong>Lipa na M-Pesa</strong> &gt; <strong>Pay Bill</strong></li>
-                    <li>Business Number: <strong style="color: var(--secondary);">XXXXXX</strong></li>
-                    <li>Account Number: <strong style="color: var(--secondary);">Your Phone Number</strong></li>
-                    <li>Enter the amount shown above</li>
-                  </ol>
-                  <div class="mb-2">
-                    <label for="orderMpesaCode" class="form-label">M-Pesa Transaction Code</label>
-                    <input type="text" class="form-control" id="orderMpesaCode" placeholder="e.g. SCI4XXXXXX" style="text-transform: uppercase;">
-                  </div>
-                  <small style="color: rgba(255,255,255,0.5);">Enter the M-Pesa confirmation code you received after payment.</small>
-                </div>
-              </div>
-
-              <!-- Delivery Note (shown when Pay on Delivery selected) -->
-              <div class="col-12 d-none" id="deliveryPaymentNote">
-                <div class="p-3 rounded" style="background: rgba(40, 167, 69, 0.1); border: 1px solid rgba(40, 167, 69, 0.25);">
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="material-icons" style="color: #28a745;">info</span>
-                    <span style="font-size: 0.9rem; color: rgba(255,255,255,0.75);">
-                      Payment will be collected upon delivery. Have cash or M-Pesa ready. Our delivery agent will contact you to confirm.
-                    </span>
-                  </div>
+                <!-- STK Push Animation Area -->
+                <div class="stk-prompt d-none text-center p-3 rounded" id="stkPrompt"
+                  style="background: rgba(232, 168, 37, 0.1);">
+                  <div class="spinner-grow text-warning mb-2" role="status" style="width: 2rem; height: 2rem;"></div>
+                  <h6>Checking your phone...</h6>
+                  <p class="small mb-0 opacity-75">Please enter your M-Pesa PIN on your phone to complete payment.</p>
                 </div>
               </div>
             </div>
           </form>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary-custom" id="orderSubmitBtn">Place Order</button>
+        <div class="modal-footer border-top bg-dark">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary-custom" id="orderSubmitBtn">Confirm Order</button>
         </div>
       </div>
     </div>
@@ -289,7 +277,16 @@
       <div class="row g-4">
         <div class="col-lg-4 col-md-6">
           <h5>VIN-KJ <span class="text-secondary-custom">AUTO</span> SERVICES</h5>
-          <p>Professional car window tinting, PPF, car wrapping, and auto detailing. Your trusted partner for all your vehicle needs.</p>
+          <p>
+            Professional car window tinting, PPF, car wrapping, and auto detailing. Your trusted partner for all your
+            vehicle needs.
+          </p>
+          <div class="footer-socials">
+            <a href="https://facebook.com" class="social-icon" target="_blank" title="Facebook"><i
+                class="fab fa-facebook-f"></i></a>
+            <a href="https://instagram.com" class="social-icon" target="_blank" title="Instagram"><i
+                class="fab fa-instagram"></i></a>
+          </div>
         </div>
         <div class="col-lg-2 col-md-6">
           <h5>Quick Links</h5>
@@ -344,7 +341,40 @@
     </a>
   </div>
 
+  <!-- Floating Cart Button -->
+  <button class="floating-cart" id="cartBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas"
+    aria-controls="cartOffcanvas">
+    <span class="material-icons">shopping_cart</span>
+    <span class="cart-badge d-none" id="cartBadge">0</span>
+  </button>
+
+  <!-- Cart Offcanvas -->
+  <div class="offcanvas offcanvas-end offcanvas-cart" tabindex="-1" id="cartOffcanvas"
+    aria-labelledby="cartOffcanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <h5 class="offcanvas-title" id="cartOffcanvasLabel">Your Cart</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div id="cartItemsContainer">
+        <!-- Cart items will be loaded here -->
+        <div class="text-center py-5 opacity-50">
+          <span class="material-icons" style="font-size: 3rem;">shopping_basket</span>
+          <p class="mt-2">Your cart is empty</p>
+        </div>
+      </div>
+    </div>
+    <div class="offcanvas-footer p-3 border-top bg-dark">
+      <div class="d-flex justify-content-between mb-3">
+        <span class="fw-bold">Total:</span>
+        <span class="fw-bold text-secondary-custom" id="cartTotalDisplay">KSh 0</span>
+      </div>
+      <button class="btn btn-primary-custom w-100" id="checkoutBtn" disabled>Proceed to Checkout</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/main.js"></script>
 </body>
+
 </html>

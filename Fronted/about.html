@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,15 +9,24 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Custom CSS -->
   <link rel="stylesheet" href="css/styles.css">
-  <style>body { font-family: 'Inter', 'Segoe UI', sans-serif; }</style>
+  <style>
+    body {
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+  </style>
 </head>
+
 <body>
 
   <!-- ============ NAVBAR ============ -->
   <nav class="navbar navbar-expand-lg fixed-top" id="mainNavbar">
     <div class="container">
-      <a class="navbar-brand" href="index.html"><img src="favicon.ico" alt="" class="brand-icon">VIN-KJ <span>AUTO</span> SERVICES</a>
+      <a class="navbar-brand" href="index.html"><img src="favicon.ico" alt="" class="brand-icon">VIN-KJ
+        <span>AUTO</span> SERVICES</a>
       <button class="navbar-toggler" type="button" onclick="toggleMobileNav()">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -60,18 +70,18 @@
           <p class="text-secondary-custom fw-semibold mb-1">ABOUT US</p>
           <h2>VIN-KJ AUTO SERVICES</h2>
           <p>
-            VIN-KJ AUTO SERVICES is a trusted name in the automotive aftermarket industry. 
-            We specialize in professional car window tinting, Paint Protection Film (PPF), 
-            car wrapping, and auto detailing. Our mission is simple: deliver quality products and services 
+            VIN-KJ AUTO SERVICES is a trusted name in the automotive aftermarket industry.
+            We specialize in professional car window tinting, Paint Protection Film (PPF),
+            car wrapping, and auto detailing. Our mission is simple: deliver quality products and services
             at fair prices, with customer satisfaction at the heart of everything we do.
           </p>
           <p>
-            Located on Lanet Road, off Baricho Road in Nairobi, we serve vehicle owners across the region. Whether 
-            you need a full tint job, PPF installation, a professional car wrap, or 
+            Located on Lanet Road, off Baricho Road in Nairobi, we serve vehicle owners across the region. Whether
+            you need a full tint job, PPF installation, a professional car wrap, or
             expert auto detailing — we're here to help.
           </p>
           <p>
-            With a team of experienced technicians and a commitment to using only 
+            With a team of experienced technicians and a commitment to using only
             high-quality materials, we ensure every customer drives away satisfied.
           </p>
         </div>
@@ -203,7 +213,7 @@
           <div class="form-card">
             <h3>Send Us a Message</h3>
             <p class="text-muted mb-4">
-              For service bookings, please use our <a href="services.html#booking">booking form</a>. 
+              For service bookings, please use our <a href="services.html#booking">booking form</a>.
               For product orders, visit our <a href="products.html">Products</a> page.
             </p>
             <form id="contactForm">
@@ -222,11 +232,13 @@
                 </div>
                 <div class="col-12">
                   <label for="contactSubject" class="form-label">Subject</label>
-                  <input type="text" class="form-control" id="contactSubject" placeholder="e.g. General Inquiry" required>
+                  <input type="text" class="form-control" id="contactSubject" placeholder="e.g. General Inquiry"
+                    required>
                 </div>
                 <div class="col-12">
                   <label for="contactMessage" class="form-label">Message</label>
-                  <textarea class="form-control" id="contactMessage" rows="5" placeholder="How can we help you?" required></textarea>
+                  <textarea class="form-control" id="contactMessage" rows="5" placeholder="How can we help you?"
+                    required></textarea>
                 </div>
                 <div class="col-12">
                   <button type="submit" class="btn btn-primary-custom">Send Message</button>
@@ -249,9 +261,7 @@
       <div class="map-wrapper" style="height: 450px;">
         <iframe
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15955.571384050045!2d36.8219!3d-1.2921!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMcKwMTcnMzEuNiJTIDM2wrA0OSczMS40IkU!5e0!3m2!1sen!2ske!4v1700000000000"
-          allowfullscreen=""
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
           title="VIN-KJ AUTO SERVICES Location">
         </iframe>
       </div>
@@ -264,7 +274,14 @@
       <div class="row g-4">
         <div class="col-lg-4 col-md-6">
           <h5>VIN-KJ <span class="text-secondary-custom">AUTO</span> SERVICES</h5>
-          <p>Professional car window tinting, PPF, car wrapping, and auto detailing. Your trusted partner for all your vehicle needs.</p>
+          <p>Professional car window tinting, PPF, car wrapping, and auto detailing. Your trusted partner for all your
+            vehicle needs.</p>
+          <div class="footer-socials">
+            <a href="https://facebook.com" class="social-icon" target="_blank" title="Facebook"><i
+                class="fab fa-facebook-f"></i></a>
+            <a href="https://instagram.com" class="social-icon" target="_blank" title="Instagram"><i
+                class="fab fa-instagram"></i></a>
+          </div>
         </div>
         <div class="col-lg-2 col-md-6">
           <h5>Quick Links</h5>
@@ -319,7 +336,40 @@
     </a>
   </div>
 
+  <!-- Floating Cart Button -->
+  <button class="floating-cart" id="cartBtn" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas"
+    aria-controls="cartOffcanvas">
+    <span class="material-icons">shopping_cart</span>
+    <span class="cart-badge d-none" id="cartBadge">0</span>
+  </button>
+
+  <!-- Cart Offcanvas -->
+  <div class="offcanvas offcanvas-end offcanvas-cart" tabindex="-1" id="cartOffcanvas"
+    aria-labelledby="cartOffcanvasLabel">
+    <div class="offcanvas-header border-bottom">
+      <h5 class="offcanvas-title" id="cartOffcanvasLabel">Your Cart</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div id="cartItemsContainer">
+        <!-- Cart items will be loaded here -->
+        <div class="text-center py-5 opacity-50">
+          <span class="material-icons" style="font-size: 3rem;">shopping_basket</span>
+          <p class="mt-2">Your cart is empty</p>
+        </div>
+      </div>
+    </div>
+    <div class="offcanvas-footer p-3 border-top bg-dark">
+      <div class="d-flex justify-content-between mb-3">
+        <span class="fw-bold">Total:</span>
+        <span class="fw-bold text-secondary-custom" id="cartTotalDisplay">KSh 0</span>
+      </div>
+      <button class="btn btn-primary-custom w-100" id="checkoutBtn" disabled>Proceed to Checkout</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/main.js"></script>
 </body>
+
 </html>
