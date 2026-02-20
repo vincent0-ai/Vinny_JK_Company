@@ -202,7 +202,7 @@ const CartManager = {
         container.innerHTML = `
           <div class="text-center py-5 opacity-50">
             <span class="material-icons" style="font-size: 3rem;">shopping_basket</span>
-            <p class="mt-2">Your cart is empty</p>
+            <p class="mt-2">Your cart is empty — add some items first!</p>
           </div>
         `;
       } else {
@@ -310,7 +310,7 @@ async function loadGallery() {
   const galleryItems = await fetchGallery();
 
   if (galleryItems && galleryItems.length > 0) {
-    // Replace hardcoded items with dynamic ones
+    // Replace spinner with dynamic gallery items
     container.innerHTML = galleryItems.map(item => `
       <div class="col-6 col-md-4 col-lg-3">
         <div class="gallery-preview-item">
@@ -319,6 +319,8 @@ async function loadGallery() {
         </div>
       </div>
     `).join('');
+  } else {
+    container.innerHTML = '<p class="text-center opacity-50 w-100">Gallery coming soon — check back later!</p>';
   }
 }
 

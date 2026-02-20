@@ -1062,7 +1062,7 @@ html {
   }
 
   .back-to-top {
-    bottom: 80px !important;
+    bottom: 140px !important;
     right: 20px !important;
   }
 }
@@ -1158,6 +1158,10 @@ html {
   }
 
   .footer-contact-item {
+    justify-content: center;
+  }
+
+  .footer-socials {
     justify-content: center;
   }
 
@@ -1471,6 +1475,20 @@ html {
   color: var(--text-light);
   border-left: 1px solid var(--border-color);
   width: 400px !important;
+  z-index: 1060;
+}
+
+.offcanvas-cart .btn-close {
+  filter: invert(1);
+  opacity: 1;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+@media (max-width: 575.98px) {
+  .offcanvas-cart {
+    width: 100% !important;
+  }
 }
 
 .cart-item-row {
@@ -1563,7 +1581,7 @@ html {
 
   .floating-cart {
     right: 20px;
-    bottom: 140px;
+    bottom: 80px;
   }
 }
 
