@@ -146,58 +146,18 @@
         <p class="section-subtitle">A look at some of our recent work, products and staff.</p>
       </div>
       <div class="row g-3" id="galleryContainer">
-        <!-- Hardcoded fallback — JS loadGallery() replaces with API data when available -->
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/468725816_541147015457920_3612435359203564489_n.jpg" alt="Professional Tinting"
-              loading="lazy">
-            <div class="gallery-overlay"><span>Tinting</span></div>
+        <!-- Gallery loaded dynamically via JS — shows 8 at a time -->
+        <div class="loading-spinner">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/480905254_607702505469037_4458766742337825351_n.jpg" alt="Vehicle Wrapping"
-              loading="lazy">
-            <div class="gallery-overlay"><span>Wrapping</span></div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/482022180_608555885383699_9034834043495382105_n.jpg" alt="Completed Project"
-              loading="lazy">
-            <div class="gallery-overlay"><span>PPF</span></div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/482082895_615241818048439_805679096993353287_n.jpg" alt="Precision Work" loading="lazy">
-            <div class="gallery-overlay"><span>Detailing</span></div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/484059054_617059051200049_1451741418312231565_n.jpg" alt="Showroom Finish" loading="lazy">
-            <div class="gallery-overlay"><span>Our Work</span></div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/586841638_818251157747503_1054758658956930288_n.jpg" alt="Latest Project" loading="lazy">
-            <div class="gallery-overlay"><span>Our Work</span></div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/593621673_824783323760953_6623332114128118648_n.jpg" alt="Customer Car" loading="lazy">
-            <div class="gallery-overlay"><span>Our Work</span></div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="gallery-preview-item">
-            <img src="gallery/621890944_866204676285484_8881209659233102607_n.jpg" alt="Premium Service" loading="lazy">
-            <div class="gallery-overlay"><span>Our Work</span></div>
-          </div>
-        </div>
+      </div>
+      <div class="text-center mt-4">
+        <button id="galleryShowMoreBtn" class="btn btn-dark-custom" onclick="showMoreGallery()" style="display: none;">
+          <span class="material-icons" style="font-size: 1.1rem; vertical-align: middle;">expand_more</span>
+          See More
+        </button>
       </div>
     </div>
   </section>
