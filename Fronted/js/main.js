@@ -319,6 +319,20 @@ async function loadGallery() {
         </div>
       </div>
     `).join('');
+
+    // Use random gallery photos for hero bg and about-preview image
+    const shuffled = [...galleryItems].sort(() => Math.random() - 0.5);
+
+    // Set hero background from a random gallery photo
+    const heroImg = getImageUrl(shuffled[0].image);
+    document.documentElement.style.setProperty('--hero-bg', `url('${heroImg}')`);
+
+    // Set about-preview image from a different random gallery photo
+    const aboutImg = document.getElementById('aboutPreviewImg');
+    if (aboutImg) {
+      const aboutSrc = shuffled.length > 1 ? shuffled[1].image : shuffled[0].image;
+      aboutImg.src = getImageUrl(aboutSrc);
+    }
   } else {
     container.innerHTML = '<p class="text-center opacity-50 w-100">Gallery coming soon — check back later!</p>';
   }
