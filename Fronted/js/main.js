@@ -4,7 +4,7 @@
    ============================================ */
 
 // ---- Configuration ----
-const API_BASE_URL = 'http://127.0.0.1:8001/api';
+const API_BASE_URL = '/api';
 
 // ---- Mobile Nav Dropdown Toggle ----
 function toggleMobileNav() {
@@ -303,6 +303,37 @@ async function fetchGallery() {
   }
 }
 
+// Gallery state for "See More" pagination on about page
+let allGalleryItems = [];
+let galleryShowCount = 0;
+const GALLERY_PAGE_SIZE = 8;
+
+function renderGalleryItem(item) {
+  return `
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="gallery-preview-item">
+        <img src="${getImageUrl(item.image)}" alt="${item.title || 'Gallery Item'}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300?text=Work'">
+        <div class="gallery-overlay"><span>${item.category || item.title || 'Our Work'}</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function showMoreGallery() {
+  const container = document.getElementById('galleryContainer');
+  const btn = document.getElementById('galleryShowMoreBtn');
+  if (!container || !allGalleryItems.length) return;
+
+  const nextItems = allGalleryItems.slice(galleryShowCount, galleryShowCount + GALLERY_PAGE_SIZE);
+  container.insertAdjacentHTML('beforeend', nextItems.map(renderGalleryItem).join(''));
+  galleryShowCount += nextItems.length;
+
+  // Hide button when all items are shown
+  if (btn && galleryShowCount >= allGalleryItems.length) {
+    btn.style.display = 'none';
+  }
+}
+
 async function loadGallery() {
   const container = document.getElementById('galleryContainer');
   if (!container) return;
@@ -310,15 +341,40 @@ async function loadGallery() {
   const galleryItems = await fetchGallery();
 
   if (galleryItems && galleryItems.length > 0) {
-    // Replace spinner with dynamic gallery items
-    container.innerHTML = galleryItems.map(item => `
-      <div class="col-6 col-md-4 col-lg-3">
-        <div class="gallery-preview-item">
-          <img src="${getImageUrl(item.image)}" alt="${item.title || 'Gallery Item'}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x300?text=Work'">
-          <div class="gallery-overlay"><span>${item.category || item.title || 'Our Work'}</span></div>
-        </div>
-      </div>
-    `).join('');
+    const shuffled = [...galleryItems].sort(() => Math.random() - 0.5);
+
+    // Set hero background from a random gallery photo
+    const heroImg = getImageUrl(shuffled[0].image);
+    document.documentElement.style.setProperty('--hero-bg', `url('${heroImg}')`);
+
+    // Set about-preview image from a different random gallery photo
+    const aboutImg = document.getElementById('aboutPreviewImg');
+    if (aboutImg) {
+      const aboutSrc = shuffled.length > 1 ? shuffled[1].image : shuffled[0].image;
+      aboutImg.src = getImageUrl(aboutSrc);
+    }
+
+    // Detect page: about page has #gallery section, index has #gallery-preview
+    const isAboutPage = !!document.getElementById('gallery');
+
+    if (isAboutPage) {
+      // About page: show first 8, "See More" reveals next batch
+      allGalleryItems = shuffled;
+      galleryShowCount = 0;
+      container.innerHTML = '';
+      const initialItems = allGalleryItems.slice(0, GALLERY_PAGE_SIZE);
+      container.innerHTML = initialItems.map(renderGalleryItem).join('');
+      galleryShowCount = initialItems.length;
+
+      // Show or hide the "See More" button
+      const btn = document.getElementById('galleryShowMoreBtn');
+      if (btn) {
+        btn.style.display = galleryShowCount < allGalleryItems.length ? '' : 'none';
+      }
+    } else {
+      // Index page: show only 4 shuffled images
+      container.innerHTML = shuffled.slice(0, 4).map(renderGalleryItem).join('');
+    }
   } else {
     container.innerHTML = '<p class="text-center opacity-50 w-100">Gallery coming soon — check back later!</p>';
   }
