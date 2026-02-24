@@ -387,6 +387,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load dynamic gallery if available
   loadGallery().catch(err => console.error('Gallery loading failed:', err));
 
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('checkout') === '1') {
+    // Only open if the modal exists on this page
+    if (document.getElementById('orderModal')) {
+      setTimeout(() => openCheckoutModal(), 300);
+    }
+  }
+
   // The checkoutBtn click listener has been moved to the document level to handle dynamic button generation.
 
   // Load Products
@@ -506,7 +514,10 @@ let selectedPaymentMethod = null;
 
 function openCheckoutModal() {
   const modalEl = document.getElementById('orderModal');
-  if (!modalEl) return;
+  if (!modalEl) {
+    window.location.href = 'products.html?checkout=1';
+    return;
+  }
   const itemsList = document.getElementById('checkoutItemsList');
   if (itemsList) {
     itemsList.innerHTML = CartManager.items.map(item => `
