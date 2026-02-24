@@ -135,27 +135,20 @@ class CartItem(models.Model):
     def total_price(self):
         return self.product.price * self.quantity
 
-
 class Payment(models.Model):
-    PAYMENT_METHOD_CHOICES = (
-        ('M-Pesa', 'M-Pesa'),
-        ('Stripe', 'Stripe'),
-    )
-    STATUS_CHOICES = (
-        ('Pending', 'Pending'),
-        ('Completed', 'Completed'),
-        ('Failed', 'Failed'),
-    )
-
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
-    transaction_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    order = models.ForeignKey(Order, related_name='payments', on_delete=models.CASCADE)
+    transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True) # CheckoutRequestID or Stripe Intent ID
+    mpesa_receipt_number = models.CharField(max_length=100, unique=True, null=True, blank=True)
+    payment_method = models.CharField(max_length=50) # 'M-Pesa', 'Stripe'
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    timestamp = models.DateTimeField(auto_now_add=True)
+    phone_number = models.CharField(max_length=20, null=True, blank=True)
+    status = models.CharField(max_length=20, default='Pending') # Pending, Completed, Failed
+    raw_callback_data = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.payment_method} - {self.amount} - {self.status}"
+        return f"Payment for Order #{self.order.id} - {self.status}"
 
 
 class Gallery(models.Model):

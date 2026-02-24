@@ -14,14 +14,18 @@ from .serializers import (
     OrderItemSerializer,
     BookingSerializer,
     CartSerializer,
-    CartSerializer,
     CartItemSerializer,
     GallerySerializer
 )
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from .utils import MpesaClient, create_stripe_payment_intent
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ServicesListCreateView(generics.ListCreateAPIView):
     queryset = Services.objects.all()
@@ -496,88 +500,120 @@ class UpdateCartItemView(generics.RetrieveUpdateDestroyAPIView):
         serializer.save()
 
 # Payment Views
+# Payment Views
 @api_view(['POST'])
 def initiate_mpesa_payment(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     phone_number = request.data.get('phone_number')
+    
     if not phone_number:
         return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Convert phone number to format 254...
+    phone_number = str(phone_number).strip().replace('+', '')
     if phone_number.startswith('0'):
         phone_number = '254' + phone_number[1:]
+    elif not phone_number.startswith('254'):
+        return Response({"error": "Invalid phone number format. Use 2547XXXXXXXX or 07XXXXXXXX"}, status=status.HTTP_400_BAD_REQUEST)
     
-    mpesa_client = MpesaClient()
-    response = mpesa_client.stk_push(
-        phone_number=phone_number,
-        amount=order.total_price,
-        account_reference=str(order.id),
-        transaction_desc=f"Payment for Order {order.id}"
-    )
+    try:
+        with transaction.atomic():
+            # Check if there's already a pending payment for this order to avoid duplicates
+            existing_pending_payment = Payment.objects.filter(order=order, status='Pending', payment_method='M-Pesa').first()
+            
+            mpesa_client = MpesaClient()
+            response = mpesa_client.stk_push(
+                phone_number=phone_number,
+                amount=order.total_price,
+                account_reference=f"ORD{order.id}",
+                transaction_desc=f"Payment for Order {order.id}"
+            )
 
-    if response and response.get('ResponseCode') == '0':
-        checkout_request_id = response.get('CheckoutRequestID')
-        Payment.objects.create(
-            order=order,
-            transaction_id=checkout_request_id, # Store checkout ID initially
-            payment_method='M-Pesa',
-            amount=order.total_price,
-            status='Pending'
-        )
-        return Response({
-            "message": "STK Push initiated",
-            "checkout_request_id": checkout_request_id
-        })
-    else:
-        return Response({"error": "Failed to initiate STK Push", "details": response}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            if response and response.get('ResponseCode') == '0':
+                checkout_request_id = response.get('CheckoutRequestID')
+                
+                # If we have an existing pending payment, we update it or keep it as is. 
+                # Better to create a new one to track separate attempts, or update if we want to keep it simple.
+                # Production usually creates a new record for each attempt.
+                Payment.objects.create(
+                    order=order,
+                    transaction_id=checkout_request_id,
+                    payment_method='M-Pesa',
+                    amount=order.total_price,
+                    phone_number=phone_number,
+                    status='Pending'
+                )
+                
+                return Response({
+                    "message": "STK Push initiated successfully",
+                    "checkout_request_id": checkout_request_id,
+                    "customer_message": response.get('CustomerMessage')
+                })
+            else:
+                error_msg = response.get('errorMessage', 'Failed to initiate STK Push') if response else 'No response from Daraja'
+                return Response({"error": error_msg, "details": response}, status=status.HTTP_400_BAD_REQUEST)
 
+    except Exception as e:
+        logger.error(f"Unexpected error in initiate_mpesa_payment: {e}")
+        return Response({"error": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@csrf_exempt
 @api_view(['POST'])
 def mpesa_callback(request):
+    """
+    M-Pesa STK Push Callback Handler
+    """
     try:
         data = request.data
-        print(f"M-Pesa Callback Received: {json.dumps(data, indent=2)}")
+        logger.info(f"M-Pesa Callback Received: {json.dumps(data)}")
         
-        body = data.get('Body', {}).get('stkCallback', {})
-        result_code = body.get('ResultCode')
-        result_desc = body.get('ResultDesc')
-        checkout_request_id = body.get('CheckoutRequestID')
+        stk_callback = data.get('Body', {}).get('stkCallback', {})
+        result_code = stk_callback.get('ResultCode')
+        result_desc = stk_callback.get('ResultDesc')
+        checkout_request_id = stk_callback.get('CheckoutRequestID')
         
-        print(f"Processing Callback: CheckoutID={checkout_request_id}, Code={result_code}, Desc={result_desc}")
-
         payment = Payment.objects.filter(transaction_id=checkout_request_id).first()
         if not payment:
-            print(f"Error: Payment with CheckoutRequestID {checkout_request_id} not found in database")
-            return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+            logger.error(f"Payment with CheckoutRequestID {checkout_request_id} not found")
+            return Response({"message": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
+        # Save raw data for auditing
+        payment.raw_callback_data = data
+        
         if result_code == 0:
-            print(f"Payment successful for Order {payment.order.id}")
+            logger.info(f"Payment successful: CheckoutID={checkout_request_id}, Ref={payment.order.id}")
             payment.status = 'Completed'
             
-            # Update transaction ID to actual Mpesa Receipt Number if available
-            metadata = body.get('CallbackMetadata', {}).get('Item', [])
-            for item in metadata:
-                if item.get('Name') == 'MpesaReceiptNumber':
-                    receipt_number = item.get('Value')
-                    print(f"M-Pesa Receipt Number: {receipt_number}")
-                    payment.transaction_id = receipt_number
+            # Extract Metadata
+            items = stk_callback.get('CallbackMetadata', {}).get('Item', [])
+            for item in items:
+                name = item.get('Name')
+                value = item.get('Value')
+                if name == 'MpesaReceiptNumber':
+                    payment.mpesa_receipt_number = value
+                elif name == 'Amount':
+                    # Optional: verify amount matches
+                    pass
             
             payment.save()
             
+            # Update order status
             order = payment.order
             order.is_paid = True
             order.is_pending = False
             order.save()
             
-            return Response({"message": "Payment successful"})
+            # Here you could trigger post-payment logic (e.g., email, SMS)
+            return Response({"ResultCode": 0, "ResultDesc": "Success"})
         else:
-            print(f"Payment failed for Order {payment.order.id}: {result_desc}")
+            logger.warning(f"Payment failed: CheckoutID={checkout_request_id}, Code={result_code}, Desc={result_desc}")
             payment.status = 'Failed'
             payment.save()
-            return Response({"message": "Payment failed"})
+            return Response({"ResultCode": 0, "ResultDesc": "Failure acknowledged"})
 
     except Exception as e:
-        print(f"CRITICAL: M-Pesa Callback Error: {str(e)}")
-        return Response({"error": "Internal Server Error during callback processing"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(f"CRITICAL: M-Pesa Callback Processing Error: {str(e)}")
+        return Response({"ResultCode": 1, "ResultDesc": "Internal Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def initiate_stripe_payment(request, order_id):

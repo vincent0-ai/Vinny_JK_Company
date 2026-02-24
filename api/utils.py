@@ -7,8 +7,17 @@ import stripe
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class MpesaClient:
+    def __init__(self):
+        self.access_token = None
+        self.token_expiry = None
+
     def get_access_token(self):
+        # In production, you might want to cache this in Redis or database
         consumer_key = settings.DARAJA_CONSUMER_KEY
         consumer_secret = settings.DARAJA_CONSUMER_SECRET
         api_url = f"{settings.DARAJA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
@@ -16,15 +25,17 @@ class MpesaClient:
         try:
             r = requests.get(api_url, auth=HTTPBasicAuth(consumer_key, consumer_secret))
             r.raise_for_status()
-            return r.json()['access_token']
+            token = r.json()['access_token']
+            logger.info("M-Pesa Access Token generated successfully")
+            return token
         except Exception as e:
-            print(f"Error generating access token: {e}")
+            logger.error(f"Error generating M-Pesa access token: {e}")
             return None
 
     def stk_push(self, phone_number, amount, account_reference, transaction_desc="Payment"):
         access_token = self.get_access_token()
         if not access_token:
-            print("Failed to get access token for STK push")
+            logger.error("Failed to get M-Pesa access token for STK push")
             return None
 
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -32,14 +43,14 @@ class MpesaClient:
         passkey = settings.DARAJA_PASSKEY
         
         if not business_short_code or not passkey:
-            print("DARAJA_BUSINESS_SHORTCODE or DARAJA_PASSKEY not set")
+            logger.error("DARAJA_BUSINESS_SHORTCODE or DARAJA_PASSKEY not set in settings")
             return None
 
         data_to_encode = business_short_code + passkey + timestamp
         password = base64.b64encode(data_to_encode.encode('utf-8')).decode('utf-8')
 
         # Daraja AccountReference must be max 12 chars and alphanumeric
-        sanitized_account_ref = str(account_reference)[:12].replace(' ', '')
+        sanitized_account_ref = str(account_reference)[:12].replace(' ', '').replace('-', '')
 
         headers = {
             'Authorization': f'Bearer {access_token}',
@@ -50,29 +61,33 @@ class MpesaClient:
             "BusinessShortCode": business_short_code,
             "Password": password,
             "Timestamp": timestamp,
-            "TransactionType": "CustomerPayBillOnline",
+            "TransactionType": "CustomerPayBillOnline", # Or CustomerBuyGoodsOnline
             "Amount": int(amount), 
             "PartyA": phone_number,
             "PartyB": business_short_code,
             "PhoneNumber": phone_number,
             "CallBackURL": settings.DARAJA_CALLBACK_URL,
             "AccountReference": sanitized_account_ref,
-            "TransactionDesc": transaction_desc[:20] # Limit desc length
+            "TransactionDesc": transaction_desc[:20] 
         }
 
-        print(f"Initiating STK Push for {phone_number}, amount {amount}, ref {sanitized_account_ref}")
+        logger.info(f"Initiating STK Push: {phone_number}, Amount: {amount}, Ref: {sanitized_account_ref}")
 
         api_url = f"{settings.DARAJA_BASE_URL}/mpesa/stkpush/v1/processrequest"
 
         try:
             response = requests.post(api_url, json=payload, headers=headers)
-            print(f"Daraja Response Status: {response.status_code}")
-            response.raise_for_status()
-            return response.json()
+            response_data = response.json()
+            logger.info(f"Daraja Response: {response.status_code} - {response_data.get('CustomerMessage')}")
+            
+            if response.status_code != 200:
+                logger.error(f"Daraja Error: {response.text}")
+            
+            return response_data
         except Exception as e:
-            print(f"Error initiating STK push: {e}")
+            logger.error(f"Error initiating STK push: {e}")
             if hasattr(e, 'response') and e.response is not None:
-                print(f"Response content: {e.response.content.decode('utf-8')}")
+                logger.error(f"Response content: {e.response.text}")
             return None
 
 def create_stripe_payment_intent(amount, currency='usd'):
