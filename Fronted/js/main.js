@@ -387,15 +387,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load dynamic gallery if available
   loadGallery().catch(err => console.error('Gallery loading failed:', err));
 
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener('click', () => {
-      const offcanvasEl = document.getElementById('cartOffcanvas');
-      const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl) || new bootstrap.Offcanvas(offcanvasEl);
-      offcanvas.hide();
-      openCheckoutModal();
-    });
-  }
+  // The checkoutBtn click listener has been moved to the document level to handle dynamic button generation.
 
   // Load Products
   const productsContainer = document.getElementById('productsContainer');
@@ -546,6 +538,16 @@ window.selectPayment = function (method) {
 };
 
 document.addEventListener('click', async function (e) {
+  if (e.target.id === 'checkoutBtn') {
+    const offcanvasEl = document.getElementById('cartOffcanvas');
+    if (offcanvasEl) {
+      const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl) || new bootstrap.Offcanvas(offcanvasEl);
+      offcanvas.hide();
+    }
+    openCheckoutModal();
+    return;
+  }
+
   if (e.target.id === 'orderSubmitBtn') {
     const form = document.getElementById('orderForm');
     if (!form.checkValidity()) { form.reportValidity(); return; }
