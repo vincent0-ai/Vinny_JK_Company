@@ -148,12 +148,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Payment Configuration
 
 # DARAJA (M-Pesa)
-DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY', '7EDurCQKPApGG2J733Js5E4tDF7dfKJXPgphrYZwEvO6V4Zh')
-DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET', 'yQnwwx7BRGZJadgB3YhhEJAy3gVFHRAyD2P8EBEn3r7ZfTxai0k4qNBD4E5ngYim')
-DARAJA_PASSKEY = os.getenv('DARAJA_PASSKEY', 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919')
-DARAJA_BUSINESS_SHORTCODE = os.getenv('DARAJA_BUSINESS_SHORTCODE', '4131848')
-DARAJA_BASE_URL = os.getenv('DARAJA_BASE_URL', 'https://sandbox.safaricom.co.ke')
-DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL', 'https://vinkj.echowithin.xyz/api/payment/mpesa/callback/')
+DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY') or '7EDurCQKPApGG2J733Js5E4tDF7dfKJXPgphrYZwEvO6V4Zh'
+DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET') or 'yQnwwx7BRGZJadgB3YhhEJAy3gVFHRAyD2P8EBEn3r7ZfTxai0k4qNBD4E5ngYim'
+DARAJA_PASSKEY = os.getenv('DARAJA_PASSKEY') or 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
+DARAJA_BUSINESS_SHORTCODE = os.getenv('DARAJA_BUSINESS_SHORTCODE') or '4131848'
+DARAJA_BASE_URL = os.getenv('DARAJA_BASE_URL') or 'https://sandbox.safaricom.co.ke'
+DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL') or 'https://vinkj.echowithin.xyz/api/payment/mpesa/callback/'
 
 # STRIPE
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_placeholder')
