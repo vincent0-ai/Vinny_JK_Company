@@ -555,7 +555,7 @@ def initiate_mpesa_payment(request, order_id):
 
     except Exception as e:
         logger.error(f"Unexpected error in initiate_mpesa_payment: {e}")
-        return Response({"error": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"error": f"Internal Server Error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @csrf_exempt
 @api_view(['POST'])
@@ -590,7 +590,9 @@ def mpesa_callback(request):
                 name = item.get('Name')
                 value = item.get('Value')
                 if name == 'MpesaReceiptNumber':
-                    payment.mpesa_receipt_number = value
+                    receipt_number = value
+                    print(f"M-Pesa Receipt Number: {receipt_number}")
+                    payment.mpesa_receipt_number = receipt_number
                 elif name == 'Amount':
                     # Optional: verify amount matches
                     pass
