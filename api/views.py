@@ -535,41 +535,49 @@ def initiate_mpesa_payment(request, order_id):
 def mpesa_callback(request):
     try:
         data = request.data
+        print(f"M-Pesa Callback Received: {json.dumps(data, indent=2)}")
+        
         body = data.get('Body', {}).get('stkCallback', {})
         result_code = body.get('ResultCode')
+        result_desc = body.get('ResultDesc')
         checkout_request_id = body.get('CheckoutRequestID')
         
-        # Log the callback data for debugging
-        print(f"M-Pesa Callback Data: {json.dumps(data)}")
+        print(f"Processing Callback: CheckoutID={checkout_request_id}, Code={result_code}, Desc={result_desc}")
 
         payment = Payment.objects.filter(transaction_id=checkout_request_id).first()
         if not payment:
+            print(f"Error: Payment with CheckoutRequestID {checkout_request_id} not found in database")
             return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if result_code == 0:
+            print(f"Payment successful for Order {payment.order.id}")
             payment.status = 'Completed'
+            
+            # Update transaction ID to actual Mpesa Receipt Number if available
+            metadata = body.get('CallbackMetadata', {}).get('Item', [])
+            for item in metadata:
+                if item.get('Name') == 'MpesaReceiptNumber':
+                    receipt_number = item.get('Value')
+                    print(f"M-Pesa Receipt Number: {receipt_number}")
+                    payment.transaction_id = receipt_number
+            
             payment.save()
             
             order = payment.order
             order.is_paid = True
+            order.is_pending = False
             order.save()
-
-            # Find actual receipt number if needed
-            # metadata = body.get('CallbackMetadata', {}).get('Item', [])
-            # for item in metadata:
-            #     if item.get('Name') == 'MpesaReceiptNumber':
-            #         payment.transaction_id = item.get('Value') # Update to real receipt?
-            #         payment.save()
             
             return Response({"message": "Payment successful"})
         else:
+            print(f"Payment failed for Order {payment.order.id}: {result_desc}")
             payment.status = 'Failed'
             payment.save()
             return Response({"message": "Payment failed"})
 
     except Exception as e:
-        print(f"M-Pesa Callback Error: {e}")
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"CRITICAL: M-Pesa Callback Error: {str(e)}")
+        return Response({"error": "Internal Server Error during callback processing"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def initiate_stripe_payment(request, order_id):

@@ -31,6 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-dev-only'
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+MPESA_CALLBACK_URL = " https://hydromechanical-jona-unsophistic.ngrok-free.dev/api/mpesa-callback/"
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://*.echowithin.xyz,https://*.caprover.com,https://*.127.0.0.1').split(',')
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # CSRF cookie security
@@ -90,7 +91,7 @@ WSGI_APPLICATION = 'vinny_kj.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'data' / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -153,3 +154,4 @@ STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_placeholder')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', 'pk_test_placeholder')
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True # For testing, can be restricted later
+

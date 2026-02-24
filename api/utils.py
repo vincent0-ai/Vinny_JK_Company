@@ -24,14 +24,22 @@ class MpesaClient:
     def stk_push(self, phone_number, amount, account_reference, transaction_desc="Payment"):
         access_token = self.get_access_token()
         if not access_token:
+            print("Failed to get access token for STK push")
             return None
 
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         business_short_code = settings.DARAJA_BUSINESS_SHORTCODE
         passkey = settings.DARAJA_PASSKEY
         
+        if not business_short_code or not passkey:
+            print("DARAJA_BUSINESS_SHORTCODE or DARAJA_PASSKEY not set")
+            return None
+
         data_to_encode = business_short_code + passkey + timestamp
         password = base64.b64encode(data_to_encode.encode('utf-8')).decode('utf-8')
+
+        # Daraja AccountReference must be max 12 chars and alphanumeric
+        sanitized_account_ref = str(account_reference)[:12].replace(' ', '')
 
         headers = {
             'Authorization': f'Bearer {access_token}',
@@ -43,25 +51,28 @@ class MpesaClient:
             "Password": password,
             "Timestamp": timestamp,
             "TransactionType": "CustomerPayBillOnline",
-            "Amount": int(amount), # Amount must be integer
+            "Amount": int(amount), 
             "PartyA": phone_number,
             "PartyB": business_short_code,
             "PhoneNumber": phone_number,
             "CallBackURL": settings.DARAJA_CALLBACK_URL,
-            "AccountReference": account_reference,
-            "TransactionDesc": transaction_desc
+            "AccountReference": sanitized_account_ref,
+            "TransactionDesc": transaction_desc[:20] # Limit desc length
         }
+
+        print(f"Initiating STK Push for {phone_number}, amount {amount}, ref {sanitized_account_ref}")
 
         api_url = f"{settings.DARAJA_BASE_URL}/mpesa/stkpush/v1/processrequest"
 
         try:
             response = requests.post(api_url, json=payload, headers=headers)
+            print(f"Daraja Response Status: {response.status_code}")
             response.raise_for_status()
             return response.json()
         except Exception as e:
             print(f"Error initiating STK push: {e}")
-            if hasattr(e, 'response') and e.response:
-                print(f"Response content: {e.response.content}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"Response content: {e.response.content.decode('utf-8')}")
             return None
 
 def create_stripe_payment_intent(amount, currency='usd'):
