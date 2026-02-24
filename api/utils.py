@@ -18,9 +18,9 @@ class MpesaClient:
 
     def get_access_token(self):
         # In production, you might want to cache this in Redis or database
-        consumer_key = settings.DARAJA_CONSUMER_KEY
-        consumer_secret = settings.DARAJA_CONSUMER_SECRET
-        api_url = f"{settings.DARAJA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials"
+        consumer_key = str(settings.DARAJA_CONSUMER_KEY).strip()
+        consumer_secret = str(settings.DARAJA_CONSUMER_SECRET).strip()
+        api_url = f"{str(settings.DARAJA_BASE_URL).strip()}/oauth/v1/generate?grant_type=client_credentials"
 
         try:
             r = requests.get(api_url, auth=HTTPBasicAuth(consumer_key, consumer_secret))

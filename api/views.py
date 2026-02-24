@@ -509,12 +509,14 @@ def initiate_mpesa_payment(request, order_id):
     if not phone_number:
         return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Convert phone number to format 254...
-    phone_number = str(phone_number).strip().replace('+', '')
+    # Convert phone number to Safaricom Daraja format: 2547XXXXXXXX or 2541XXXXXXXX
+    phone_number = str(phone_number).strip().replace('+', '').replace(' ', '')
     if phone_number.startswith('0'):
         phone_number = '254' + phone_number[1:]
-    elif not phone_number.startswith('254'):
-        return Response({"error": "Invalid phone number format. Use 2547XXXXXXXX or 07XXXXXXXX"}, status=status.HTTP_400_BAD_REQUEST)
+    elif len(phone_number) == 9 and (phone_number.startswith('7') or phone_number.startswith('1')):
+        phone_number = '254' + phone_number
+    elif not phone_number.startswith('254') or len(phone_number) != 12:
+        return Response({"error": "Invalid phone number format. Use 07XXXXXXXX, 01XXXXXXXX, or 2547XXXXXXXX"}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         with transaction.atomic():
