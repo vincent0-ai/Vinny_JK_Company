@@ -587,7 +587,7 @@ document.addEventListener('click', async function (e) {
       if (selectedPaymentMethod === 'online') {
         const stkPrompt = document.getElementById('stkPrompt');
         if (stkPrompt) stkPrompt.classList.remove('d-none');
-        await fetch(`${API_BASE_URL}/payment/mpesa/initiate/${order.id}/`, {
+        await fetch(`${API_BASE_URL}/payment/mpesa/initiate/${order.order_id}/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone_number: orderData.phone_number })
