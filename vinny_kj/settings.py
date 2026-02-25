@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-dev-only'
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
-MPESA_CALLBACK_URL = " https://hydromechanical-jona-unsophistic.ngrok-free.dev/api/mpesa-callback/"
+MPESA_CALLBACK_URL = "https://hydromechanical-jona-unsophistic.ngrok-free.dev/api/mpesa-callback/"
 CSRF_TRUSTED_ORIGINS = ['https://*.echowithin.xyz', 'https://*.caprover.com', 'http://127.0.0.1', 'http://localhost', 'https://vinkj.echowithin.xyz']
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # CSRF cookie security
