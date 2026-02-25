@@ -102,7 +102,7 @@ def create_order(request):
                 if not product.has_stock(quantity):
                     raise ValueError(f"Not enough stock for {product.name}")
 
-                product.reduce_stock(quantity)
+                # Note: Stock deduction moved to mpesa_callback / successful payment handler
                 
                 price_at_order = product.price
                 total_order_price += price_at_order * quantity
@@ -125,6 +125,8 @@ def create_order(request):
                 street_address=request.data.get('street_address')
             )
 
+            payment_method = request.data.get('payment_method', 'M-Pesa')
+            
             for item_data in order_items_to_create:
                 OrderItem.objects.create(
                     order=order,
@@ -132,6 +134,11 @@ def create_order(request):
                     quantity=item_data['quantity'],
                     price_at_order=item_data['price_at_order']
                 )
+                
+                # If it's Payment on Delivery, deduct stock immediately 
+                # because there won't be an automated M-Pesa webhook to do it later.
+                if payment_method == 'Delivery':
+                    item_data['product'].reduce_stock(item_data['quantity'])
 
         return Response({
             "message": "Order created successfully",
@@ -601,8 +608,17 @@ def mpesa_callback(request):
             
             payment.save()
             
-            # Update order status
+            # Update order status and deduct stock
             order = payment.order
+            
+            # Deduct stock ONLY when genuinely paid
+            if not order.is_paid:
+                for order_item in order.items.all():
+                    if order_item.product.has_stock(order_item.quantity):
+                        order_item.product.reduce_stock(order_item.quantity)
+                    else:
+                        logger.warning(f"Stock shortage for product {order_item.product.name} during late M-Pesa payment.")
+
             order.is_paid = True
             order.is_pending = False
             order.save()
