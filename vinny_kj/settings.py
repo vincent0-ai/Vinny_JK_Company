@@ -158,6 +158,10 @@ DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL') or 'https://vinkj.echowit
 # STRIPE
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_placeholder')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', 'pk_test_placeholder')
+
+# AFRICA'S TALKING (SMS)
+AT_USERNAME = os.getenv('AT_USERNAME', 'sandbox')
+AT_API_KEY = os.getenv('AT_API_KEY', 'your_sandbox_api_key_here')
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True # For testing, can be restricted later
 
