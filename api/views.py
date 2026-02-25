@@ -140,9 +140,12 @@ def create_order(request):
                 if payment_method == 'Delivery':
                     item_data['product'].reduce_stock(item_data['quantity'])
 
-        # Send SMS Notification
-        sms_message = f"Hello {order.full_name}, your order #{order.id} has been received. Total: KES {total_order_price}. Thank you for shopping with Vinny KJ!"
-        send_notification_sms(order.phone_number, sms_message)
+        # Send SMS Notification (wrapped to prevent order failure on SMS error)
+        try:
+            sms_message = f"Hello {order.full_name}, your order #{order.id} has been received. Total: KES {total_order_price}. Thank you for shopping with Vinny KJ!"
+            send_notification_sms(order.phone_number, sms_message)
+        except Exception as e:
+            logger.error(f"Failed to send SMS for order {order.id}: {e}")
 
         return Response({
             "message": "Order created successfully",
@@ -211,9 +214,12 @@ def create_booking(request):
             additional_notes=request.data.get('additional_notes')
         )
 
-        # Send SMS Notification
-        sms_message = f"Hello {booking.full_name}, your booking for {services.name} on {booking.booking_date} at {booking.booking_time} has been received. Thank you for choosing Vinny KJ!"
-        send_notification_sms(booking.phone_number, sms_message)
+        # Send SMS Notification (wrapped to prevent booking failure on SMS error)
+        try:
+            sms_message = f"Hello {booking.full_name}, your booking for {services.name} on {booking.booking_date} at {booking.booking_time} has been received. Thank you for choosing Vinny KJ!"
+            send_notification_sms(booking.phone_number, sms_message)
+        except Exception as e:
+            logger.error(f"Failed to send SMS for booking {booking.id}: {e}")
 
         return Response({
             "message": "Booking created successfully",
