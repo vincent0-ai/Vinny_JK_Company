@@ -113,7 +113,8 @@ class SMSClient:
 
         try:
             logger.info(f"Attempting to send SMS to {phone_number} via Africa's Talking")
-            response = self.sms.send(message, [phone_number])
+            sender_id = getattr(settings, 'AT_SENDER_ID', None)
+            response = self.sms.send(message, [phone_number], sender_id)
             logger.info(f"Africa's Talking Response: {response}")
             
             # Check for specific failure in response
