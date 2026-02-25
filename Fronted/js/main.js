@@ -251,7 +251,7 @@ function renderServiceCard(service, isPreview) {
         </div>
         <div class="card-footer-custom">
           <a href="services.html#booking" class="btn btn-primary-custom w-100"
-             onclick="sessionStorage.setItem('selectedServiceId', '${service.id}'); sessionStorage.setItem('selectedServicePrice', '${service.price}');">
+             onclick="window.selectServiceForBooking('${service.id}', '${service.price}')">
             Book Now
           </a>
         </div>
@@ -259,6 +259,20 @@ function renderServiceCard(service, isPreview) {
     </div>
   `;
 }
+
+window.selectServiceForBooking = function (serviceId, servicePrice) {
+  sessionStorage.setItem('selectedServiceId', serviceId);
+  sessionStorage.setItem('selectedServicePrice', servicePrice);
+
+  const bookingSelect = document.getElementById('bookingService');
+  if (bookingSelect) {
+    bookingSelect.value = serviceId;
+    const priceDisplay = document.getElementById('bookingPrice');
+    if (priceDisplay) {
+      priceDisplay.textContent = formatPrice(servicePrice);
+    }
+  }
+};
 
 function renderProductCard(product, isPreview) {
   const imgUrl = getImageUrl(product.image);
@@ -454,6 +468,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Booking logic
   const bookingForm = document.getElementById('bookingForm');
   if (bookingForm) {
+    const bookingDateInput = document.getElementById('bookingDate');
+    if (bookingDateInput) {
+      // Set minimum date to today to prevent past bookings
+      const today = new Date().toISOString().split('T')[0];
+      bookingDateInput.setAttribute('min', today);
+    }
+
     const bookingServiceSelect = document.getElementById('bookingService');
     if (bookingServiceSelect) {
       const services = await fetchServices();
