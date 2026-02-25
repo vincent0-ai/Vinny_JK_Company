@@ -21,7 +21,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .utils import MpesaClient, create_stripe_payment_intent, send_notification_sms
+from .utils import MpesaClient, create_stripe_payment_intent, send_receipt_email
 import json
 import logging
 
@@ -120,6 +120,7 @@ def create_order(request):
                 vehicle_make=request.data.get('vehicle_make'),
                 vehicle_year=request.data.get('vehicle_year'),
                 full_name=request.data.get('full_name'),
+                email=request.data.get('email'),
                 phone_number=request.data.get('phone_number'),
                 estate=request.data.get('estate'),
                 street_address=request.data.get('street_address')
@@ -140,12 +141,14 @@ def create_order(request):
                 if payment_method == 'Delivery':
                     item_data['product'].reduce_stock(item_data['quantity'])
 
-        # Send SMS Notification (wrapped to prevent order failure on SMS error)
+        # Send Email Receipt ONLY if Delivery. M-Pesa receipts are sent in the callback webhook.
         try:
-            sms_message = f"Hello {order.full_name}, your order #{order.id} has been received. Total: KES {total_order_price}. Thank you for shopping with Vinny KJ!"
-            send_notification_sms(order.phone_number, sms_message)
+            if order.email and payment_method == 'Delivery':
+                subject = f"Order #{order.id} Confirmation (Payment on Delivery)"
+                email_body = f"Hello {order.full_name},<br><br>We have received your order <b>#{order.id}</b> for a total of <b>KES {total_order_price}</b>. Since you selected Payment on Delivery, payment will be collected upon arrival at your location.<br><br>Thank you for shopping with Vinny KJ!"
+                send_receipt_email(order.email, subject, email_body)
         except Exception as e:
-            logger.error(f"Failed to send SMS for order {order.id}: {e}")
+            logger.error(f"Failed to send Email Receipt for Delivery order {order.id}: {e}")
 
         return Response({
             "message": "Order created successfully",
@@ -208,18 +211,21 @@ def create_booking(request):
             booking_date=booking_date,
             booking_time=booking_time,
             full_name=request.data.get('full_name'),
+            email=request.data.get('email'),
             phone_number=request.data.get('phone_number'),
             vehicle_model=request.data.get('vehicle_model'),
             number_plate=request.data.get('number_plate'),
             additional_notes=request.data.get('additional_notes')
         )
 
-        # Send SMS Notification (wrapped to prevent booking failure on SMS error)
+        # Send Email Receipt (wrapped to prevent booking failure on Email error)
         try:
-            sms_message = f"Hello {booking.full_name}, your booking for {services.name} on {booking.booking_date} at {booking.booking_time} has been received. Thank you for choosing Vinny KJ!"
-            send_notification_sms(booking.phone_number, sms_message)
+            if booking.email:
+                subject = f"Booking Confirmation: {services.name}"
+                email_body = f"Hello {booking.full_name},<br><br>Your booking for <b>{services.name}</b> on <b>{booking.booking_date}</b> at <b>{booking.booking_time}</b> has been received.<br><br>Thank you for choosing Vinny KJ Auto Services!"
+                send_receipt_email(booking.email, subject, email_body)
         except Exception as e:
-            logger.error(f"Failed to send SMS for booking {booking.id}: {e}")
+            logger.error(f"Failed to send Email Receipt for booking {booking.id}: {e}")
 
         return Response({
             "message": "Booking created successfully",
@@ -637,7 +643,15 @@ def mpesa_callback(request):
             order.is_pending = False
             order.save()
             
-            # Here you could trigger post-payment logic (e.g., email, SMS)
+            # Send Email Receipt upon successful M-Pesa Payment
+            try:
+                if order.email:
+                    subject = f"Payment Received: Order #{order.id}"
+                    email_body = f"Hello {order.full_name},<br><br>We have successfully received your M-Pesa payment of <b>KES {payment.amount}</b> (Receipt: {payment.mpesa_receipt_number}) for Order <b>#{order.id}</b>.<br><br>Your order is now processing. Thank you for shopping with Vinny KJ!"
+                    send_receipt_email(order.email, subject, email_body)
+            except Exception as e:
+                logger.error(f"Failed to send Email Receipt for M-Pesa Order {order.id}: {e}")
+
             return Response({"ResultCode": 0, "ResultDesc": "Success"})
         else:
             logger.warning(f"Payment failed: CheckoutID={checkout_request_id}, Code={result_code}, Desc={result_desc}")

@@ -3,12 +3,14 @@ from requests.auth import HTTPBasicAuth
 import base64
 from datetime import datetime
 from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 import stripe
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 import logging
-import africastalking
 
 logger = logging.getLogger(__name__)
 
@@ -91,52 +93,31 @@ class MpesaClient:
                 logger.error(f"Response content: {e.response.text}")
             return None
 
-class SMSClient:
-    def __init__(self):
-        self.username = settings.AT_USERNAME
-        self.api_key = settings.AT_API_KEY
-        africastalking.initialize(self.username, self.api_key)
-        self.sms = africastalking.SMS
-
-    def send_sms(self, phone_number, message):
-        # Ensure phone number is in international format
-        phone_number = str(phone_number).strip().replace('+', '').replace(' ', '')
-        if phone_number.startswith('0'):
-            phone_number = '254' + phone_number[1:]
-        
-        if not phone_number.startswith('254'):
-            # Default to 254 if not provided, assuming local numbers
-            phone_number = '254' + phone_number
-            
-        if not phone_number.startswith('+'):
-            phone_number = '+' + phone_number
-
-        try:
-            logger.info(f"Attempting to send SMS to {phone_number} via Africa's Talking")
-            sender_id = getattr(settings, 'AT_SENDER_ID', None)
-            response = self.sms.send(message, [phone_number], sender_id)
-            logger.info(f"Africa's Talking Response: {response}")
-            
-            # Check for specific failure in response
-            if response and 'SMSMessageData' in response:
-                recipients = response['SMSMessageData'].get('Recipients', [])
-                for recipient in recipients:
-                    if recipient.get('status') != 'Success':
-                        logger.error(f"SMS failed for {recipient.get('number')}: {recipient.get('status')}")
-            
-            return response
-        except Exception as e:
-            logger.error(f"CRITICAL Error sending SMS: {str(e)}")
-            return None
-
-def send_notification_sms(phone_number, message):
-    """ Helper function to send SMS notifications """
-    if not phone_number:
-        logger.warning("No phone number provided for SMS notification")
-        return None
+def send_receipt_email(to_email, subject, message_body):
+    """ Helper function to send Email receipts """
+    if not to_email:
+        logger.warning("No email address provided for receipt notification")
+        return False
     
-    client = SMSClient()
-    return client.send_sms(phone_number, message)
+    try:
+        html_message = f'<div style="font-family: Arial, sans-serif; padding: 20px;"><h3>VINNY KJ</h3><p>{message_body}</p></div>'
+        plain_message = strip_tags(html_message)
+        from_email = getattr(settings, 'EMAIL_HOST_USER', 'noreply@vinkj.com')
+        
+        send_mail(
+            subject=subject,
+            message=plain_message,
+            from_email=from_email,
+            recipient_list=[to_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        logger.info(f"Receipt Email sent to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Error sending email receipt to {to_email}: {e}")
+        return False
+
 
 
 def create_stripe_payment_intent(amount, currency='usd'):

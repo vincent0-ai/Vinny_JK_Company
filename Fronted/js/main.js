@@ -507,17 +507,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       submitBtn.textContent = 'Submitting...';
       try {
         const price = bookingServiceSelect.options[bookingServiceSelect.selectedIndex].dataset.price;
-        await createBooking({
+        const bookingData = {
           services: bookingServiceSelect.value,
           total_price: parseFloat(price),
           full_name: document.getElementById('bookingName').value,
+          email: document.getElementById('bookingEmail').value,
           phone_number: document.getElementById('bookingPhone').value,
           vehicle_model: document.getElementById('bookingVehicle').value,
           number_plate: document.getElementById('bookingPlate').value,
           booking_date: document.getElementById('bookingDate').value,
           booking_time: document.getElementById('bookingTime').value,
           additional_notes: document.getElementById('bookingNotes').value
-        });
+        };
+        const response = await createBooking(bookingData);
+        generateReceipt('booking', bookingData, response);
         showAlert('bookingSuccess', 'Booking submitted!', 8000);
         bookingForm.reset();
       } catch (err) {
@@ -596,6 +599,7 @@ document.addEventListener('click', async function (e) {
       })),
       total_price: CartManager.getTotal(),
       full_name: document.getElementById('orderName').value,
+      email: document.getElementById('orderEmail').value,
       phone_number: document.getElementById('orderPhone').value,
       estate: document.getElementById('orderEstate').value,
       street_address: document.getElementById('orderStreet').value,
@@ -616,20 +620,175 @@ document.addEventListener('click', async function (e) {
         showAlert('orderSuccess', 'STK Push sent! Check your phone.', 10000);
       } else {
         showAlert('orderSuccess', 'Order placed!', 8000);
+        generateReceipt('order', orderData, order);
+        CartManager.clear();
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
+          if (modal) modal.hide();
+        }, 3000);
+      } catch (err) {
+        showAlert('orderError', err.message, 6000);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Order';
       }
-      CartManager.clear();
-      setTimeout(() => {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
-        if (modal) modal.hide();
-      }, 3000);
-    } catch (err) {
-      showAlert('orderError', err.message, 6000);
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Confirm Order';
     }
-  }
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Inject Receipt Modal HTML
+  const receiptModalHtml = `
+  <div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-bottom-0 pb-0">
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body pt-0">
+          <div id="receiptContent" style="padding: 2rem; background: #fff; color: #000; border-radius: 8px;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+              <h2 style="margin: 0; color: #d32f2f; font-weight: 800;">VIN-KJ</h2>
+              <p style="margin: 0; font-size: 0.9rem; color: #555;">AUTO SERVICES</p>
+              <p style="margin: 0; font-size: 0.8rem; color: #777;">Lanet Road, off Baricho Road, Nairobi</p>
+              <p style="margin: 0; font-size: 0.8rem; color: #777;">0718885303 | vinkjautoaccesories@gmail.com</p>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 2px solid #eee; padding-bottom: 1rem;">
+              <div>
+                <h5 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: #333;">Receipt <span id="receiptId">#--</span></h5>
+                <p style="margin: 0; font-size: 0.9rem; color: #555;">Date: <span id="receiptDate"></span></p>
+              </div>
+              <div style="text-align: right;">
+                <p style="margin: 0; font-weight: 600; color: #333;">Status: <span id="receiptStatus" style="color: #d32f2f;">Pending</span></p>
+                <p style="margin: 0; font-size: 0.9rem; color: #555;">Payment: <span id="receiptPaymentMethod">M-Pesa</span></p>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+              <h6 style="color: #333; margin-bottom: 0.5rem;">Customer Details</h6>
+              <p style="margin: 0; font-size: 0.9rem; color: #555;">Name: <span id="receiptName"></span></p>
+              <p style="margin: 0; font-size: 0.9rem; color: #555;">Email: <span id="receiptEmail"></span></p>
+              <p style="margin: 0; font-size: 0.9rem; color: #555;">Phone: <span id="receiptPhone"></span></p>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+              <h6 style="color: #333; margin-bottom: 0.5rem;" id="receiptItemLabel">Order Items</h6>
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead style="background: #f8f9fa;">
+                  <tr>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Description</th>
+                    <th style="padding: 0.75rem; text-align: center; border-bottom: 2px solid #dee2e6;">Qty</th>
+                    <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid #dee2e6;">Amount</th>
+                  </tr>
+                </thead>
+                <tbody id="receiptItemsTable" style="border-bottom: 2px solid #dee2e6;">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+              <div style="width: 250px;">
+                <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 1.2rem; color: #333; padding-top: 0.5rem; border-top: 2px solid #000;">
+                  <span>Total:</span>
+                  <span id="receiptTotalAmount">KSh 0</span>
+                </div>
+              </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 3rem; font-size: 0.85rem; color: #777;">
+              <p>Thank you for choosing VIN-KJ Auto Services!</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top-0 justify-content-center pb-4">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary-custom" onclick="downloadReceipt()">
+            <span class="material-icons align-middle me-1">download</span> Download PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', receiptModalHtml);
+});
+
+window.generateReceipt = function (type, payload, response) {
+  const date = new Date().toLocaleString();
+  document.getElementById('receiptDate').textContent = date;
+
+  document.getElementById('receiptName').textContent = payload.full_name || 'N/A';
+  document.getElementById('receiptEmail').textContent = payload.email || 'N/A';
+  document.getElementById('receiptPhone').textContent = payload.phone_number || 'N/A';
+
+  const tbody = document.getElementById('receiptItemsTable');
+  tbody.innerHTML = '';
+
+  if (type === 'order') {
+    document.getElementById('receiptId').textContent = '#' + (response.order_id || '...');
+    document.getElementById('receiptItemLabel').textContent = 'Order Items';
+    document.getElementById('receiptPaymentMethod').textContent = payload.payment_method;
+
+    if (payload.payment_method === 'Delivery') {
+      document.getElementById('receiptStatus').textContent = 'Confirmed (Pay on Delivery)';
+      document.getElementById('receiptStatus').style.color = '#28a745';
+    } else {
+      document.getElementById('receiptStatus').textContent = 'Pending M-Pesa Payment';
+      document.getElementById('receiptStatus').style.color = '#dc3545';
+    }
+
+    payload.items.forEach(item => {
+      const cartItem = CartManager.items.find(i => i.id === item.product_id);
+      const name = cartItem ? cartItem.name : `Product #${item.product_id}`;
+      const price = cartItem ? cartItem.price * item.quantity : 0;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">${name}</td>
+        <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #dee2e6;">${item.quantity}</td>
+        <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #dee2e6;">${formatPrice(price)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('receiptTotalAmount').textContent = formatPrice(payload.total_price);
+
+  } else if (type === 'booking') {
+    document.getElementById('receiptId').textContent = 'BK-' + (response.booking_id || '...');
+    document.getElementById('receiptItemLabel').textContent = 'Service Booking';
+    document.getElementById('receiptPaymentMethod').textContent = 'Service Payment';
+    document.getElementById('receiptStatus').textContent = 'Confirmed';
+    document.getElementById('receiptStatus').style.color = '#28a745';
+
+    const serviceSelect = document.getElementById('bookingService');
+    const serviceName = serviceSelect.options[serviceSelect.selectedIndex]?.text || 'Service';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">${serviceName} <br><small style="color:#6c757d;">${payload.booking_date} at ${payload.booking_time}</small></td>
+      <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid #dee2e6;">1</td>
+      <td style="padding: 0.75rem; text-align: right; border-bottom: 1px solid #dee2e6;">${formatPrice(payload.total_price)}</td>
+    `;
+    tbody.appendChild(tr);
+
+    document.getElementById('receiptTotalAmount').textContent = formatPrice(payload.total_price);
+  }
+
+  const receiptModal = new bootstrap.Modal(document.getElementById('receiptModal'));
+  receiptModal.show();
+};
+
+window.downloadReceipt = function () {
+  const element = document.getElementById('receiptContent');
+  const opt = {
+    margin: [0.5, 0.5, 0.5, 0.5],
+    filename: 'VIN-KJ_Receipt.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+};
 
 // Navbar scroll effect
 window.addEventListener('scroll', function () {

@@ -159,11 +159,13 @@ DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL') or 'https://vinkj.echowit
 STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_placeholder')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', 'pk_test_placeholder')
 
-# AFRICA'S TALKING
-AT_USERNAME = os.getenv('AT_USERNAME')
-AT_API_KEY = os.getenv('AT_API_KEY')
-AT_SENDER_ID = os.getenv('AT_SENDER_ID')
-
+# EMAIL SETTINGS (SMTP)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your_email@gmail.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your_app_password')
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True # For testing, can be restricted later
 
