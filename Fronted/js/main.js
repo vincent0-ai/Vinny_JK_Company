@@ -785,29 +785,32 @@ window.generateReceipt = function (type, payload, response) {
 window.downloadReceipt = function () {
   const originalElement = document.getElementById('receiptContent');
 
-  // Clone element to avoid Bootstrap modal CSS issues (transform/fixed positioning)
+  // Clone element to avoid Bootstrap modal CSS issues
   const clone = originalElement.cloneNode(true);
 
-  // Create a temporary container off-screen
+  // Hidden wrapper to avoid mobile clipping and culling out-of-bounds nodes
   const container = document.createElement('div');
   container.style.position = 'absolute';
-  container.style.left = '-9999px';
   container.style.top = '0';
-  container.style.width = '900px'; // Widened to prevent right-side cutoff
-  container.style.padding = '20px'; // Give inner content breathing room
+  container.style.left = '0';
+  container.style.zIndex = '-9999';
+  container.style.width = '800px'; // Enforce fixed layout
+  container.style.padding = '30px'; // Internal breathing room
   container.style.background = 'white';
   container.appendChild(clone);
+
   document.body.appendChild(container);
 
   const opt = {
-    margin: [0.3, 0.3, 0.3, 0.3], // Reduced margins slightly
+    margin: [0.3, 0.3, 0.3, 0.3],
     filename: 'VIN-KJ_Receipt.pdf',
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, windowWidth: 900 },
+    html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
   };
 
-  html2pdf().set(opt).from(clone).save().then(() => {
+  // Must call .from(container) so the 800px width and 30px padding are applied
+  html2pdf().set(opt).from(container).save().then(() => {
     // Cleanup temporary container after PDF is generated
     document.body.removeChild(container);
   });
