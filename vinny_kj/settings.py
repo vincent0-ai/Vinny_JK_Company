@@ -166,6 +166,7 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your_email@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your_app_password')
+EMAIL_TIMEOUT = 5 # Don't block requests indefinitely if email is unreachable
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True # For testing, can be restricted later
 
