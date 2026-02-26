@@ -110,9 +110,9 @@ def send_receipt_email(to_email, subject, message_body):
             from_email=from_email,
             recipient_list=[to_email],
             html_message=html_message,
-            fail_silently=False,
+            fail_silently=True,
         )
-        logger.info(f"Receipt Email sent to {to_email}")
+        logger.info(f"Receipt Email sent to {to_email} (or failed silently without crashing)")
         return True
     except Exception as e:
         logger.error(f"Error sending email receipt to {to_email}: {e}")
