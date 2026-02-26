@@ -783,15 +783,33 @@ window.generateReceipt = function (type, payload, response) {
 };
 
 window.downloadReceipt = function () {
-  const element = document.getElementById('receiptContent');
+  const originalElement = document.getElementById('receiptContent');
+
+  // Clone element to avoid Bootstrap modal CSS issues (transform/fixed positioning)
+  const clone = originalElement.cloneNode(true);
+
+  // Create a temporary container off-screen
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.width = '800px'; // Give it a fixed width for consistent rendering
+  container.style.background = 'white';
+  container.appendChild(clone);
+  document.body.appendChild(container);
+
   const opt = {
     margin: [0.5, 0.5, 0.5, 0.5],
     filename: 'VIN-KJ_Receipt.pdf',
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
+    html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
   };
-  html2pdf().set(opt).from(element).save();
+
+  html2pdf().set(opt).from(clone).save().then(() => {
+    // Cleanup temporary container after PDF is generated
+    document.body.removeChild(container);
+  });
 };
 
 // Navbar scroll effect
