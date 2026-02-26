@@ -36,8 +36,11 @@ function truncateText(text, maxLen) {
 
 function getImageUrl(imagePath) {
   if (!imagePath) return 'https://via.placeholder.com/400x250?text=No+Image';
-  if (imagePath.startsWith('http')) return imagePath;
-  return imagePath;
+  if (imagePath.startsWith('http') || imagePath.startsWith('https') || imagePath.startsWith('data:')) return imagePath;
+  if (imagePath.startsWith('/media/') || imagePath.startsWith('media/')) {
+    return imagePath.startsWith('/') ? imagePath : '/' + imagePath;
+  }
+  return '/media/' + (imagePath.startsWith('/') ? imagePath.substring(1) : imagePath);
 }
 
 function showAlert(elementId, message, duration) {
