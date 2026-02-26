@@ -221,9 +221,16 @@ def create_booking(request):
         # Send Email Receipt (wrapped to prevent booking failure on Email error)
         try:
             if booking.email:
+                date_str = booking.booking_date.strftime('%Y-%m-%d')
+                time_str = booking.booking_time.strftime('%H:%M')
                 subject = f"Booking Confirmation: {services.name}"
-                email_body = f"Hello {booking.full_name},<br><br>Your booking for <b>{services.name}</b> on <b>{booking.booking_date}</b> at <b>{booking.booking_time}</b> has been received.<br><br>Thank you for choosing Vinny KJ Auto Services!"
-                send_receipt_email(booking.email, subject, email_body)
+                email_body = f"Hello {booking.full_name},<br><br>Your booking for <b>{services.name}</b> on <b>{date_str}</b> at <b>{time_str}</b> has been received.<br><br>Thank you for choosing Vinny KJ Auto Services!"
+                
+                success = send_receipt_email(booking.email, subject, email_body)
+                if not success:
+                    logger.error(f"send_receipt_email returned False for booking {booking.id}")
+                else:
+                    logger.info(f"Booking confirmation email sent for booking {booking.id}")
         except Exception as e:
             logger.error(f"Failed to send Email Receipt for booking {booking.id}: {e}")
 

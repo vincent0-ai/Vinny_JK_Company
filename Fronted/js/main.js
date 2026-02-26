@@ -784,35 +784,33 @@ window.generateReceipt = function (type, payload, response) {
 
 window.downloadReceipt = function () {
   const originalElement = document.getElementById('receiptContent');
-
-  // Clone element to avoid Bootstrap modal CSS issues
-  const clone = originalElement.cloneNode(true);
-
-  // Hidden wrapper to avoid mobile clipping and culling out-of-bounds nodes
-  const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.top = '0';
-  container.style.left = '0';
-  container.style.zIndex = '-9999';
-  container.style.width = '800px'; // Enforce fixed layout
-  container.style.padding = '30px'; // Internal breathing room
-  container.style.background = 'white';
-  container.appendChild(clone);
-
-  document.body.appendChild(container);
+  if (!originalElement) return;
 
   const opt = {
-    margin: [0.3, 0.3, 0.3, 0.3],
+    margin: [0.4, 0.4, 0.4, 0.4],
     filename: 'VIN-KJ_Receipt.pdf',
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, windowWidth: 800 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      letterRendering: true,
+      onclone: (clonedDoc) => {
+        // Ensure the cloned receipt is styled properly regardless of modal context
+        const el = clonedDoc.getElementById('receiptContent');
+        if (el) {
+          el.style.width = '800px';
+          el.style.padding = '40px';
+          el.style.background = 'white';
+          el.style.margin = '0 auto';
+        }
+      }
+    },
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
   };
 
-  // Must call .from(container) so the 800px width and 30px padding are applied
-  html2pdf().set(opt).from(container).save().then(() => {
-    // Cleanup temporary container after PDF is generated
-    document.body.removeChild(container);
+  html2pdf().set(opt).from(originalElement).save().catch(err => {
+    console.error('PDF Generation Error:', err);
   });
 };
 
