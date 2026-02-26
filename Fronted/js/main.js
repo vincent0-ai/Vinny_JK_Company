@@ -629,13 +629,14 @@ document.addEventListener('click', async function (e) {
           const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
           if (modal) modal.hide();
         }, 3000);
-      } catch (err) {
-        showAlert('orderError', err.message, 6000);
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Confirm Order';
       }
+    } catch (err) {
+      showAlert('orderError', err.message, 6000);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Confirm Order';
     }
+  }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
