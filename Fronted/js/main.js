@@ -364,11 +364,22 @@ async function loadGallery() {
     const heroImg = getImageUrl(shuffled[0].image);
     document.documentElement.style.setProperty('--hero-bg', `url('${heroImg}')`);
 
-    // Set about-preview image from a different random gallery photo
-    const aboutImg = document.getElementById('aboutPreviewImg');
-    if (aboutImg) {
-      const aboutSrc = shuffled.length > 1 ? shuffled[1].image : shuffled[0].image;
-      aboutImg.src = getImageUrl(aboutSrc);
+    // Set about-preview carousel from gallery photos
+    const aboutCarouselInner = document.getElementById('aboutPreviewCarouselInner');
+    if (aboutCarouselInner && shuffled.length > 0) {
+      // Use up to 5 images for the carousel
+      const carouselImages = shuffled.slice(0, 5);
+      aboutCarouselInner.innerHTML = carouselImages.map((item, index) => `
+        <div class="carousel-item ${index === 0 ? 'active' : ''}" style="height: 100%;">
+          <img src="${getImageUrl(item.image)}" class="d-block w-100" alt="About VIN-KJ AUTO SERVICES" style="background: var(--bg-card); height: 100%; object-fit: cover;">
+        </div>
+      `).join('');
+    } else {
+      const aboutImg = document.getElementById('aboutPreviewImg');
+      if (aboutImg) {
+        const aboutSrc = shuffled.length > 1 ? shuffled[1].image : shuffled[0].image;
+        aboutImg.src = getImageUrl(aboutSrc);
+      }
     }
 
     // Detect page: about page has #gallery section, index has #gallery-preview
