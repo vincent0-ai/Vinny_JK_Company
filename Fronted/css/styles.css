@@ -257,6 +257,8 @@ img {
   align-items: center;
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
   overflow: hidden;
+  padding-top: 110px;
+  padding-bottom: 60px;
 }
 
 .hero-section::before {
