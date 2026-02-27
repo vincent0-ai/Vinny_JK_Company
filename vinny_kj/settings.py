@@ -148,16 +148,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Payment Configuration
 
 # DARAJA (M-Pesa)
-DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY') or '1YqVNQOq2y52SGSG9X7ZzLAdN07N3zW7r5P710oUoXmGiDGA'
-DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET') or 'DIfj59V2NlU4Iur2KxO2x4l4qAS1GjH5xL0P3X25kX8Jz3XhTj5wXG2L3H0X5yU'
-DARAJA_PASSKEY = os.getenv('DARAJA_PASSKEY') or 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-DARAJA_BUSINESS_SHORTCODE = os.getenv('DARAJA_BUSINESS_SHORTCODE') or '174379'
-DARAJA_BASE_URL = os.getenv('DARAJA_BASE_URL') or 'https://sandbox.safaricom.co.ke'
-DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL') or 'https://vinkj.echowithin.xyz/api/payment/mpesa/callback/'
+DARAJA_CONSUMER_KEY = os.getenv('DARAJA_CONSUMER_KEY', '')
+DARAJA_CONSUMER_SECRET = os.getenv('DARAJA_CONSUMER_SECRET', '')
+DARAJA_PASSKEY = os.getenv('DARAJA_PASSKEY', '')
+DARAJA_BUSINESS_SHORTCODE = os.getenv('DARAJA_BUSINESS_SHORTCODE', '')
+DARAJA_BASE_URL = os.getenv('DARAJA_BASE_URL', 'https://sandbox.safaricom.co.ke')
+DARAJA_CALLBACK_URL = os.getenv('DARAJA_CALLBACK_URL', '')
 
 # STRIPE
-STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', 'sk_test_placeholder')
-STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', 'pk_test_placeholder')
+STRIPE_SECRET_KEY = os.getenv('STRIPE_SECRET_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY', '')
 
 # EMAIL SETTINGS (SMTP)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -171,8 +171,8 @@ if EMAIL_PORT == 465:
     EMAIL_USE_SSL = True
     EMAIL_USE_TLS = False
 
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your_email@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your_app_password')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'VIN-KJ Auto Services <echowithin@echowithin.xyz>')
 EMAIL_TIMEOUT = 5 # Don't block requests indefinitely if email is unreachable
 # CORS
