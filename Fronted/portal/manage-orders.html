@@ -58,6 +58,11 @@
             color: #721c24;
         }
 
+        .status-completed {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+        }
+
         .action-btn {
             padding: 8px 12px;
             border-radius: 8px;
@@ -146,27 +151,82 @@
             }
         }
 
+        function getStatusInfo(order) {
+            if (order.is_cancelled) return { label: 'Cancelled', cls: 'status-cancelled' };
+            if (order.is_delivered) return { label: 'Delivered', cls: 'status-completed' };
+            if (order.is_paid) return { label: 'Paid', cls: 'status-paid' };
+            return { label: 'Pending', cls: 'status-pending' };
+        }
+
         function renderOrders(orders) {
             const tbody = document.getElementById('ordersTableBody');
-            tbody.innerHTML = orders.map(order => `
+            tbody.innerHTML = orders.map(order => {
+                const st = getStatusInfo(order);
+                const showDeliver = order.is_paid && !order.is_delivered && !order.is_cancelled;
+                return `
                 <tr>
                     <td>#${order.id}</td>
                     <td>${order.full_name}</td>
                     <td>KES ${order.total_price}</td>
-                    <td><span class="status-badge ${order.is_paid ? 'status-paid' : 'status-pending'}">${order.is_paid ? 'Paid' : 'Pending'}</span></td>
+                    <td><span class="status-badge ${st.cls}">${st.label}</span></td>
                     <td>${new Date(order.created_at).toLocaleDateString()}</td>
                     <td>
-                        <button class="action-btn btn-view"><i class="fas fa-eye"></i></button>
-                        <button class="action-btn btn-update"><i class="fas fa-check"></i></button>
+                        <button class="action-btn btn-view" onclick="viewOrder(${order.id})"><i class="fas fa-eye"></i></button>
+                        ${showDeliver ? `<button class="action-btn btn-update" onclick="markDelivered(this, ${order.id})"><i class="fas fa-truck"></i> Deliver</button>` : ''}
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
+        }
+
+        function viewOrder(id) {
+            window.open('/admin/api/order/' + id + '/change/', '_blank');
+        }
+
+        async function markDelivered(btn, id) {
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Delivering...';
+
+            try {
+                const res = await fetch(`/api/orders/${id}/deliver/`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showNotification('Order marked as delivered! Email sent to customer.', 'success');
+                    fetchOrders();
+                } else {
+                    showNotification(data.error || 'Action failed', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                }
+            } catch (e) {
+                showNotification('Network error. Please try again.', 'error');
+                btn.disabled = false;
+                btn.innerHTML = orig;
+            }
+        }
+
+        function showNotification(message, type) {
+            const existing = document.querySelector('.portal-notification');
+            if (existing) existing.remove();
+            const div = document.createElement('div');
+            div.className = 'portal-notification';
+            div.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 9999;
+                padding: 14px 24px; border-radius: 12px; font-weight: 600;
+                font-size: 0.9rem; max-width: 400px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                ${type === 'success'
+                    ? 'background: #d4edda; color: #155724; border: 1px solid #c3e6cb;'
+                    : 'background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'}
+            `;
+            div.innerText = message;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
         }
 
         function renderMockOrders() {
             const mockData = [
-                { id: 101, full_name: 'John Doe', total_price: '4,500', is_paid: true, created_at: new Date() },
-                { id: 102, full_name: 'Jane Smith', total_price: '12,000', is_paid: false, created_at: new Date() }
+                { id: 101, full_name: 'John Doe', total_price: '4,500', is_paid: true, is_delivered: false, is_cancelled: false, created_at: new Date() },
+                { id: 102, full_name: 'Jane Smith', total_price: '12,000', is_paid: false, is_delivered: false, is_cancelled: false, created_at: new Date() }
             ];
             renderOrders(mockData);
         }

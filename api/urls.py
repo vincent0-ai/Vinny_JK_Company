@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import cancel_order, cancel_booking
+from .views import cancel_order, cancel_booking, mark_order_delivered
 from .views import (
     ServicesListCreateView, ServicesDetailView,
     ProductListCreateView, ProductDetailView,
@@ -25,6 +25,7 @@ urlpatterns = [
     path('orders/', OrderListView.as_view()),
     path('orders/create/', create_order),
     path('orders/<int:pk>/cancel/', cancel_order),
+    path('orders/<int:order_id>/deliver/', mark_order_delivered),
     path('orders/<int:pk>/', OrderDetailView.as_view()),
 
     # Bookings
