@@ -10,10 +10,10 @@
     --dark: #212529;
     --sidebar-width: 260px;
     --header-height: 70px;
-    --card-shadow: 0 4px 20px 0 rgba(0,0,0,.05);
+    --card-shadow: 0 4px 20px 0 rgba(0, 0, 0, .05);
     --glass-bg: rgba(255, 255, 255, 0.9);
     --glass-border: rgba(255, 255, 255, 0.3);
-    --bg-main: #f4f7fe;
+    --bg-main: #dce6f6;
     --text-main: #2d3748;
     --text-muted: #718096;
 }
@@ -31,6 +31,46 @@ body {
     overflow-x: hidden;
 }
 
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1100;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.35);
+    transition: background 0.2s, transform 0.2s;
+}
+
+.sidebar-toggle:hover {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+/* Sidebar Overlay (mobile) */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
 /* Sidebar Styling */
 .sidebar {
     position: fixed;
@@ -39,9 +79,11 @@ body {
     width: var(--sidebar-width);
     height: 100vh;
     background: white;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.04);
     z-index: 1000;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .logo-section {
@@ -50,6 +92,7 @@ body {
     align-items: center;
     padding: 0 25px;
     border-bottom: 1px solid #edf2f7;
+    flex-shrink: 0;
 }
 
 .logo-section h2 {
@@ -62,6 +105,9 @@ body {
 .nav-links {
     padding: 20px 0;
     list-style: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .nav-links li {
@@ -79,7 +125,8 @@ body {
     transition: 0.2s;
 }
 
-.nav-links a:hover, .nav-links a.active {
+.nav-links a:hover,
+.nav-links a.active {
     background: var(--primary);
     color: white;
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
@@ -113,7 +160,7 @@ header {
 /* Dashboard Cards */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 25px;
     margin-bottom: 30px;
 }
@@ -126,6 +173,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border: 1px solid rgba(0, 123, 255, 0.08);
 }
 
 .stat-info h3 {
@@ -148,12 +196,28 @@ header {
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
+    flex-shrink: 0;
 }
 
-.icon-revenue { background: rgba(0,123,255,0.1); color: var(--primary); }
-.icon-orders { background: rgba(40,167,69,0.1); color: var(--success); }
-.icon-bookings { background: rgba(255,193,7,0.1); color: var(--warning); }
-.icon-stock { background: rgba(220,53,69,0.1); color: var(--danger); }
+.icon-revenue {
+    background: rgba(0, 123, 255, 0.1);
+    color: var(--primary);
+}
+
+.icon-orders {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--success);
+}
+
+.icon-bookings {
+    background: rgba(255, 193, 7, 0.1);
+    color: var(--warning);
+}
+
+.icon-stock {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--danger);
+}
 
 /* Charts Layout */
 .charts-grid {
@@ -167,6 +231,13 @@ header {
     padding: 25px;
     border-radius: 20px;
     box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0, 123, 255, 0.08);
+    overflow: hidden;
+}
+
+.chart-container canvas {
+    max-height: 350px;
+    width: 100% !important;
 }
 
 .chart-header {
@@ -174,11 +245,140 @@ header {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-/* Responsive */
+.chart-header select {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid #edf2f7;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    background: white;
+    cursor: pointer;
+}
+
+/* Table containers (used on manage pages) */
+.table-container {
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0, 123, 255, 0.08);
+    overflow-x: auto;
+}
+
+/* ===================== */
+/* Responsive Breakpoints */
+/* ===================== */
+
+/* Large tablets / small laptops */
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Tablets */
 @media (max-width: 992px) {
+    .sidebar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 80px 25px 25px 25px;
+    }
+
     .charts-grid {
         grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .stat-card {
+        padding: 18px;
+        border-radius: 16px;
+    }
+
+    .stat-info p {
+        font-size: 1.3rem;
+    }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        font-size: 1.2rem;
+    }
+
+    .welcome-msg h1 {
+        font-size: 1.5rem;
+    }
+
+    .chart-container {
+        padding: 18px;
+    }
+
+    .main-content {
+        padding: 75px 15px 20px 15px;
+    }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-info h3 {
+        font-size: 0.8rem;
+    }
+
+    .stat-info p {
+        font-size: 1.2rem;
+    }
+
+    .welcome-msg h1 {
+        font-size: 1.3rem;
+    }
+
+    .welcome-msg p {
+        font-size: 0.85rem;
+    }
+
+    .chart-header h2 {
+        font-size: 1rem;
+    }
+
+    .charts-grid {
+        gap: 15px;
     }
 }

@@ -62,7 +62,10 @@
 </head>
 
 <body>
-    <div class="sidebar">
+    <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="sidebar" id="sidebar">
         <div class="logo-section">
             <h2>VINNY KJ</h2>
         </div>
@@ -127,6 +130,19 @@
             ];
             renderProducts(mock);
         }
+    </script>
+    <script>
+        (function () {
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('active'); }
+            toggle.addEventListener('click', function () {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+            });
+            overlay.addEventListener('click', closeSidebar);
+        })();
     </script>
 </body>
 

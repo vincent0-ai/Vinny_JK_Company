@@ -634,12 +634,12 @@ document.addEventListener('click', async function (e) {
           body: JSON.stringify({ phone_number: orderData.phone_number })
         });
 
-        showAlert('orderSuccess', 'STK Push sent! Please enter your PIN on your phone (waiting up to 30s)...', 10000);
+        showAlert('orderSuccess', 'STK Push sent! Please enter your PIN on your phone (waiting up to 90s)...', 10000);
 
-        // Polling logic: check order status every 5 seconds for a max of 30 seconds (6 attempts)
+        // Polling logic: check order status every 5 seconds for a max of 90 seconds (18 attempts)
         let isPaid = false;
         let attempts = 0;
-        const maxAttempts = 6;
+        const maxAttempts = 18;
 
         while (attempts < maxAttempts && !isPaid) {
           await new Promise(resolve => setTimeout(resolve, 5000)); // wait 5 seconds
