@@ -20,7 +20,7 @@
     :root {
         --primary: #007bff;
         --secondary: #6c757d;
-        --light-bg: #f4f7fe;
+        --light-bg: #dce6f6;
     }
 
     #header {
@@ -59,7 +59,7 @@
     .module {
         border-radius: 15px !important;
         box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .05) !important;
-        border: none !important;
+        border: 1px solid rgba(0, 123, 255, 0.08) !important;
         overflow: hidden;
         margin-bottom: 30px !important;
     }
@@ -92,6 +92,40 @@
 
     #user-tools a {
         color: var(--primary) !important;
+    }
+
+    /* Responsive adjustments for Django admin */
+    @media (max-width: 992px) {
+        #header {
+            padding: 12px 20px;
+        }
+
+        #content {
+            padding: 20px !important;
+        }
+
+        div.breadcrumbs {
+            padding: 8px 20px !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        #header {
+            padding: 10px 15px;
+        }
+
+        #content {
+            padding: 15px 10px !important;
+        }
+
+        div.breadcrumbs {
+            padding: 8px 15px !important;
+        }
+
+        .module {
+            border-radius: 10px !important;
+            margin-bottom: 20px !important;
+        }
     }
 </style>
 {% endblock %}
