@@ -9,6 +9,10 @@
         style="font-family: 'Montserrat', sans-serif; font-weight: 800; color: #007bff; letter-spacing: -1px;">
         VINNY KJ <span style="font-size: 0.6em; color: #718096; font-weight: 500;">PORTAL</span>
     </a>
+    <a href="/portal/"
+        style="font-family: 'Inter', sans-serif; font-size: 0.55em; color: white !important; background: #007bff; padding: 4px 12px; border-radius: 6px; margin-left: 12px; font-weight: 600; text-decoration: none !important; vertical-align: middle;">
+        Dashboard ↗
+    </a>
 </h1>
 {% endblock %}
 
@@ -20,7 +24,7 @@
     :root {
         --primary: #007bff;
         --secondary: #6c757d;
-        --light-bg: #f4f7fe;
+        --light-bg: #dce6f6;
     }
 
     #header {
@@ -59,7 +63,7 @@
     .module {
         border-radius: 15px !important;
         box-shadow: 0 4px 20px 0 rgba(0, 0, 0, .05) !important;
-        border: none !important;
+        border: 1px solid rgba(0, 123, 255, 0.08) !important;
         overflow: hidden;
         margin-bottom: 30px !important;
     }
@@ -92,6 +96,40 @@
 
     #user-tools a {
         color: var(--primary) !important;
+    }
+
+    /* Responsive adjustments for Django admin */
+    @media (max-width: 992px) {
+        #header {
+            padding: 12px 20px;
+        }
+
+        #content {
+            padding: 20px !important;
+        }
+
+        div.breadcrumbs {
+            padding: 8px 20px !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        #header {
+            padding: 10px 15px;
+        }
+
+        #content {
+            padding: 15px 10px !important;
+        }
+
+        div.breadcrumbs {
+            padding: 8px 15px !important;
+        }
+
+        .module {
+            border-radius: 10px !important;
+            margin-bottom: 20px !important;
+        }
     }
 </style>
 {% endblock %}

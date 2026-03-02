@@ -92,7 +92,8 @@
             <li><a href="manage-bookings.html" class="active"><i class="fas fa-calendar-alt"></i> Manage Bookings</a>
             </li>
             <li><a href="manage-products.html"><i class="fas fa-box"></i> Stock Management</a></li>
-            <li><a href="../index.html"><i class="fas fa-external-link-alt"></i> View Website</a></li>
+            <li><a href="/admin/" target="_blank"><i class="fas fa-cogs"></i> Django Admin</a></li>
+            <li><a href="/"><i class="fas fa-external-link-alt"></i> View Website</a></li>
         </ul>
     </div>
 
@@ -148,20 +149,56 @@
                     <td>${booking.booking_date} at ${booking.booking_time}</td>
                     <td><span class="status-badge status-${booking.status}">${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span></td>
                     <td>
-                        ${booking.status === 'pending' ? `<button onclick="updateStatus(${booking.id}, 'confirm')" class="action-btn btn-confirm">Confirm</button>` : ''}
-                        ${booking.status === 'confirmed' ? `<button onclick="updateStatus(${booking.id}, 'complete')" class="action-btn btn-complete">Complete</button>` : ''}
+                        ${booking.status === 'pending' ? `<button onclick="updateStatus(this, ${booking.id}, 'confirm')" class="action-btn btn-confirm">Confirm</button>` : ''}
+                        ${booking.status === 'confirmed' ? `<button onclick="updateStatus(this, ${booking.id}, 'complete')" class="action-btn btn-complete">Complete</button>` : ''}
                     </td>
                 </tr>
             `).join('');
         }
 
-        async function updateStatus(id, action) {
+        async function updateStatus(btn, id, action) {
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = action === 'confirm' ? 'Confirming...' : 'Completing...';
+
             try {
-                await fetch(`/api/bookings/${id}/${action}/`, { method: 'POST' });
-                fetchBookings();
+                const res = await fetch(`/api/bookings/${id}/${action}/`, { method: 'POST' });
+                const data = await res.json();
+
+                if (res.ok) {
+                    const label = action === 'confirm' ? 'confirmed' : 'completed';
+                    showNotification(`Booking ${label} successfully! Confirmation email sent to client.`, 'success');
+                    fetchBookings();
+                } else {
+                    showNotification(data.error || 'Action failed', 'error');
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                }
             } catch (error) {
-                alert('Action failed');
+                showNotification('Network error. Please try again.', 'error');
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
+        }
+
+        function showNotification(message, type) {
+            const existing = document.querySelector('.portal-notification');
+            if (existing) existing.remove();
+
+            const div = document.createElement('div');
+            div.className = 'portal-notification';
+            div.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 9999;
+                padding: 14px 24px; border-radius: 12px; font-weight: 600;
+                font-size: 0.9rem; max-width: 400px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease;
+                ${type === 'success'
+                    ? 'background: #d4edda; color: #155724; border: 1px solid #c3e6cb;'
+                    : 'background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'}
+            `;
+            div.innerText = message;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
         }
 
         function renderMockBookings() {

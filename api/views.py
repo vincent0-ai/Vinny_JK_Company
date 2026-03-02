@@ -282,6 +282,48 @@ def cancel_order(request, order_id):
     except Order.DoesNotExist:
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
+@api_view(['POST'])
+def mark_order_delivered(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id)
+
+        if order.is_cancelled:
+            return Response({"error": "Cannot deliver a cancelled order"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if order.is_delivered:
+            return Response({"error": "Order already marked as delivered"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.is_delivered = True
+        order.is_completed = True
+        order.is_pending = False
+        order.is_out_for_delivery = False
+        order.save()
+
+        # Send delivery confirmation email
+        try:
+            if order.email:
+                subject = f"Order #{order.id} Delivered"
+                email_body = (
+                    f"Hello {order.full_name},<br><br>"
+                    f"Your order <b>#{order.id}</b> has been <b>delivered</b> successfully.<br><br>"
+                    f"<b>Total:</b> KES {order.total_price}<br>"
+                    f"<b>Payment:</b> {'Paid' if order.is_paid else 'Pending'}<br><br>"
+                    f"If you have any issues with your order, please don't hesitate to contact us.<br><br>"
+                    f"Thank you for shopping with Vinny KJ!<br><br>"
+                    f"Best regards,<br>"
+                    f"<b>Vinny KJ Auto Services</b>"
+                )
+                send_receipt_email(order.email, subject, email_body)
+                logger.info(f"Delivery email sent for order {order.id} to {order.email}")
+        except Exception as e:
+            logger.error(f"Failed to send delivery email for order {order.id}: {e}")
+
+        return Response({"message": "Order marked as delivered", "is_delivered": True})
+
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
  # logic for booking cancellation
 @api_view(['POST'])
 
@@ -355,7 +397,36 @@ def confirm_booking(request, booking_id):
     booking.status = 'confirmed'
     booking.save()
 
-    return Response({"message": "Booking confirmed"})
+    # Send confirmation email to client
+    try:
+        if booking.email:
+            date_str = booking.booking_date.strftime('%A, %B %d, %Y') if booking.booking_date else 'TBD'
+            time_str = booking.booking_time.strftime('%I:%M %p') if booking.booking_time else 'TBD'
+            service_name = booking.services.name if booking.services else 'Service'
+            vehicle_info = f"{booking.vehicle_model}" if booking.vehicle_model else ''
+            plate_info = f" ({booking.number_plate})" if booking.number_plate else ''
+
+            subject = f"Booking Confirmed: {service_name} on {date_str}"
+            email_body = (
+                f"Hello {booking.full_name},<br><br>"
+                f"Great news! Your booking has been <b>confirmed</b>.<br><br>"
+                f"<b>Service:</b> {service_name}<br>"
+                f"<b>Date:</b> {date_str}<br>"
+                f"<b>Time:</b> {time_str}<br>"
+                f"{f'<b>Vehicle:</b> {vehicle_info}{plate_info}<br>' if vehicle_info else ''}"
+                f"<b>Total:</b> KES {booking.total_price}<br><br>"
+                f"Please arrive 10 minutes before your appointment time. "
+                f"If you need to reschedule or cancel, please contact us at least 2 hours before your appointment.<br><br>"
+                f"We look forward to seeing you!<br><br>"
+                f"Best regards,<br>"
+                f"<b>Vinny KJ Auto Services</b>"
+            )
+            send_receipt_email(booking.email, subject, email_body)
+            logger.info(f"Booking confirmation email sent for booking {booking.id} to {booking.email}")
+    except Exception as e:
+        logger.error(f"Failed to send confirmation email for booking {booking.id}: {e}")
+
+    return Response({"message": "Booking confirmed", "status": "confirmed"})
 
 
 @api_view(['POST'])
@@ -371,7 +442,27 @@ def complete_booking(request, booking_id):
     booking.status = 'completed'
     booking.save()
 
-    return Response({"message": "Booking completed"})
+    # Send completion/thank-you email to client
+    try:
+        if booking.email:
+            service_name = booking.services.name if booking.services else 'Service'
+
+            subject = f"Service Completed: {service_name}"
+            email_body = (
+                f"Hello {booking.full_name},<br><br>"
+                f"Your <b>{service_name}</b> service has been <b>completed</b>. "
+                f"We hope you are satisfied with the results!<br><br>"
+                f"If you have any feedback or need further assistance, please don't hesitate to reach out.<br><br>"
+                f"Thank you for choosing Vinny KJ Auto Services. We look forward to serving you again!<br><br>"
+                f"Best regards,<br>"
+                f"<b>Vinny KJ Auto Services</b>"
+            )
+            send_receipt_email(booking.email, subject, email_body)
+            logger.info(f"Booking completion email sent for booking {booking.id} to {booking.email}")
+    except Exception as e:
+        logger.error(f"Failed to send completion email for booking {booking.id}: {e}")
+
+    return Response({"message": "Booking completed", "status": "completed"})
 
 
 @api_view(['GET'])

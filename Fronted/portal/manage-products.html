@@ -74,7 +74,8 @@
             <li><a href="manage-orders.html"><i class="fas fa-shopping-cart"></i> Manage Orders</a></li>
             <li><a href="manage-bookings.html"><i class="fas fa-calendar-alt"></i> Manage Bookings</a></li>
             <li><a href="manage-products.html" class="active"><i class="fas fa-box"></i> Stock Management</a></li>
-            <li><a href="../index.html"><i class="fas fa-external-link-alt"></i> View Website</a></li>
+            <li><a href="/admin/" target="_blank"><i class="fas fa-cogs"></i> Django Admin</a></li>
+            <li><a href="/"><i class="fas fa-external-link-alt"></i> View Website</a></li>
         </ul>
     </div>
 
@@ -117,10 +118,14 @@
                     <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">${p.description.substring(0, 60)}...</p>
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-weight: 700; color: var(--primary);">KES ${p.price}</span>
-                        <button class="action-btn btn-update"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="action-btn btn-update" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i> Edit</button>
                     </div>
                 </div>
             `).join('');
+        }
+
+        function editProduct(id) {
+            window.open('/admin/api/product/' + id + '/change/', '_blank');
         }
 
         function renderMockProducts() {
