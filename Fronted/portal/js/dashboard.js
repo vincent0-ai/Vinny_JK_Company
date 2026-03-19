@@ -1,12 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     fetchDashboardStats();
-    initRevenueChart();
-    initBookingChart();
 });
 
 async function fetchDashboardStats() {
     try {
-        // Fetch real stats from the backend
         const response = await fetch('/api/admin/dashboard-stats/', {
             headers: getAuthHeaders()
         });
@@ -18,34 +15,46 @@ async function fetchDashboardStats() {
 
         const data = await response.json();
 
+        // Update Text Stats
         document.getElementById('total-revenue').innerText = `KES ${data.total_revenue.toLocaleString()}`;
         document.getElementById('total-orders').innerText = data.total_orders;
         document.getElementById('total-bookings').innerText = data.pending_bookings;
         document.getElementById('low-stock').innerText = data.low_stock_count;
 
+        // Init Charts with Real Data
+        initRevenueChart(data.revenue_trends);
+        initBookingChart(data.booking_status_distribution);
+
     } catch (error) {
         console.error('Error fetching stats:', error);
-        // Fallback for demo if API not yet ready
         mockStats();
+        // Fallback charts with mock data
+        initRevenueChart({ labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], data: [0, 0, 0, 0, 0, 0, 0] });
+        initBookingChart({ 'Pending': 0, 'Confirmed': 0, 'Completed': 0, 'Cancelled': 0 });
     }
 }
 
 function mockStats() {
-    document.getElementById('total-revenue').innerText = "KES 124,500";
-    document.getElementById('total-orders').innerText = "18";
-    document.getElementById('total-bookings').innerText = "7";
-    document.getElementById('low-stock').innerText = "3";
+    document.getElementById('total-revenue').innerText = "KES 0";
+    document.getElementById('total-orders').innerText = "0";
+    document.getElementById('total-bookings').innerText = "0";
+    document.getElementById('low-stock').innerText = "0";
 }
 
-function initRevenueChart() {
+function initRevenueChart(revenueData) {
     const ctx = document.getElementById('revenueChart').getContext('2d');
+    
+    // Destroy existing chart if it exists to avoid overlaps on refresh
+    const existingChart = Chart.getChart("revenueChart");
+    if (existingChart) existingChart.destroy();
+
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            labels: revenueData.labels,
             datasets: [{
                 label: 'Revenue (KES)',
-                data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+                data: revenueData.data,
                 borderColor: '#007bff',
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 tension: 0.4,
@@ -57,9 +66,7 @@ function initRevenueChart() {
         },
         options: {
             responsive: true,
-            plugins: {
-                legend: { display: false }
-            },
+            plugins: { legend: { display: false } },
             scales: {
                 y: { beginAtZero: true },
                 x: { grid: { display: false } }
@@ -68,14 +75,18 @@ function initRevenueChart() {
     });
 }
 
-function initBookingChart() {
+function initBookingChart(bookingDist) {
     const ctx = document.getElementById('bookingChart').getContext('2d');
+
+    const existingChart = Chart.getChart("bookingChart");
+    if (existingChart) existingChart.destroy();
+
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
+            labels: Object.keys(bookingDist),
             datasets: [{
-                data: [5, 8, 12, 2],
+                data: Object.values(bookingDist),
                 backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545'],
                 borderWidth: 0,
                 hoverOffset: 10
@@ -85,7 +96,7 @@ function initBookingChart() {
             responsive: true,
             cutout: '70%',
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } }
             }
         }
     });

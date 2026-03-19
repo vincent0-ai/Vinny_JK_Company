@@ -540,12 +540,42 @@ def admin_dashboard_stats(request):
     # Booking status distribution
     booking_stats = Booking.objects.values('status').annotate(count=Count('id'))
     
+    # Revenue Trends (Last 7 Days)
+    today = timezone.now().date()
+    seven_days_ago = today - timedelta(days=6)
+    
+    revenue_query = Payment.objects.filter(
+        status='Completed', 
+        created_at__date__gte=seven_days_ago
+    ).annotate(
+        day=TruncDay('created_at')
+    ).values('day').annotate(
+        total=Sum('amount')
+    ).order_by('day')
+    
+    # Prepare labels and data for Chart.js
+    labels = []
+    revenue_data = []
+    
+    # Fill in zeros for days with no sales
+    for i in range(7):
+        date = seven_days_ago + timedelta(days=i)
+        labels.append(date.strftime('%a')) # 'Mon', 'Tue', etc.
+        
+        # Find matching revenue in query
+        day_rev = next((item['total'] for item in revenue_query if item['day'].date() == date), 0)
+        revenue_data.append(float(day_rev))
+    
     return Response({
         "total_revenue": total_revenue,
         "total_orders": total_orders,
         "pending_bookings": pending_bookings,
         "low_stock_count": low_stock_count,
-        "booking_status_distribution": {s['status']: s['count'] for s in booking_stats}
+        "booking_status_distribution": {s['status']: s['count'] for s in booking_stats},
+        "revenue_trends": {
+            "labels": labels,
+            "data": revenue_data
+        }
     })
 
 AVAILABLE_TIME_SLOTS = [

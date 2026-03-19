@@ -106,13 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', handleLogin);
     }
 
-    // 3. Attach logout handler to any element with id="logout-btn" or [href="logout"]
-    // We update the existing simple logout <a> links in the sidebar
-    const logoutLinks = document.querySelectorAll('a[href="#"]:last-child, .logout-btn');
-    logoutLinks.forEach(link => {
-        // Look for links containing "Logout" text or an explicit # target
-        if (link.innerText.includes('Logout') || link.classList.contains('logout-btn')) {
-            link.addEventListener('click', logout);
-        }
+    // 3. Attach logout handler to any element with class="logout-btn"
+    document.querySelectorAll('.logout-btn').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            logout();
+        });
     });
 });

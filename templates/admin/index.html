@@ -179,13 +179,16 @@
             document.getElementById('dash-bookings').innerText = data.pending_bookings;
 
             // Revenue Chart
-            new Chart(document.getElementById('adminRevenueChart'), {
+            const revCtx = document.getElementById('adminRevenueChart');
+            if (Chart.getChart(revCtx)) Chart.getChart(revCtx).destroy();
+            
+            new Chart(revCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    labels: data.revenue_trends.labels,
                     datasets: [{
                         label: 'Revenue',
-                        data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+                        data: data.revenue_trends.data,
                         borderColor: '#007bff',
                         backgroundColor: 'rgba(0, 123, 255, 0.05)',
                         fill: true,
@@ -196,13 +199,16 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } }, 
-                    scales: { y: { display: false }, x: { grid: { display: false } } } 
+                    scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } 
                 }
             });
 
             // Booking Chart
+            const bookCtx = document.getElementById('adminBookingChart');
+            if (Chart.getChart(bookCtx)) Chart.getChart(bookCtx).destroy();
+
             const bData = data.booking_status_distribution;
-            new Chart(document.getElementById('adminBookingChart'), {
+            new Chart(bookCtx, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(bData),
