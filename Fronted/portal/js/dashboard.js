@@ -9,7 +9,8 @@ async function fetchDashboardStats() {
         });
 
         if (!response.ok) {
-            if (response.status === 401 || response.status === 403) logout();
+            if (response.status === 401) logout();
+            if (response.status === 403) logout("Access Denied: You do not have administrative privileges. Please ensure 'Staff status' is checked in the Django Admin for this user.");
             throw new Error('Failed to fetch dashboard stats');
         }
 

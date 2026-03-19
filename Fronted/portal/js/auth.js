@@ -8,19 +8,23 @@ const BASE_URL = '/api';
  */
 function requireAuth() {
     const token = localStorage.getItem('adminToken');
-    const isLoginPage = window.location.pathname.endsWith('login.html');
+    const path = window.location.pathname;
+    const isLoginPage = path.endsWith('login.html');
 
     if (!token && !isLoginPage) {
         // Redirect to login if on a protected page without a token
         window.location.href = 'login.html';
-    } else if (token && isLoginPage) {
-        // Redirect to dashboard if on login page but already explicitly logged in
+        return false;
+    } 
+    
+    if (token && isLoginPage) {
+        // Redirect to dashboard if on login page but already logged in
         window.location.href = 'index.html';
+        return true;
     }
-}
 
-// 1. Immediately check authentication status
-requireAuth();
+    return !!token || isLoginPage;
+}
 
 /**
  * Handle Login Form Submission
@@ -46,9 +50,7 @@ async function handleLogin(e) {
     try {
         const response = await fetch(`${BASE_URL}/admin/login/`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 username: usernameInput,
                 password: passwordInput
@@ -63,12 +65,12 @@ async function handleLogin(e) {
             window.location.href = 'index.html';
         } else {
             // Failure
-            errorDiv.innerText = 'Invalid username or password.';
+            errorDiv.innerText = data.non_field_errors || 'Invalid username or password.';
             errorDiv.style.display = 'block';
-            throw new Error('Authentication failed');
         }
     } catch (error) {
         console.error('Login Error:', error);
+        errorDiv.innerText = 'Connection error. Please try again.';
         errorDiv.style.display = 'block';
     } finally {
         // Reset UI
@@ -81,9 +83,11 @@ async function handleLogin(e) {
 /**
  * Logout user
  */
-function logout(e) {
-    if (e) e.preventDefault();
+function logout(message = null) {
     localStorage.removeItem('adminToken');
+    if (message) {
+        alert(message);
+    }
     window.location.href = 'login.html';
 }
 
@@ -98,19 +102,30 @@ function getAuthHeaders() {
     };
 }
 
-// Get the standardized headers for authenticated API requests
-document.addEventListener('DOMContentLoaded', () => {
-    // 2. Attach login form handler if on login page
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
-    }
+// Global Initialization
+(function init() {
+    // 1. Run immediate auth check
+    const authorized = requireAuth();
 
-    // 3. Attach logout handler to any element with class="logout-btn"
-    document.querySelectorAll('.logout-btn').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            logout();
+    // 2. Setup UI handling
+    document.addEventListener('DOMContentLoaded', () => {
+        // Show body if authorized or on login page
+        if (authorized || window.location.pathname.endsWith('login.html')) {
+            document.body.style.display = 'block';
+        }
+
+        // Attach login form handler
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', handleLogin);
+        }
+
+        // Attach logout handler
+        document.querySelectorAll('.logout-btn').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                logout();
+            });
         });
     });
-});
+})();
