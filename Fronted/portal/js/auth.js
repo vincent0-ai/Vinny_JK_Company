@@ -111,7 +111,7 @@ function getAuthHeaders() {
     document.addEventListener('DOMContentLoaded', () => {
         // Show body if authorized or on login page
         if (authorized || window.location.pathname.endsWith('login.html')) {
-            document.body.style.display = 'block';
+            document.body.style.display = '';
         }
 
         // Attach login form handler
