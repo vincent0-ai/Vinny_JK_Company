@@ -340,7 +340,10 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Delivering...';
 
             try {
-                const res = await fetch(`/api/orders/${id}/deliver/`, { method: 'POST' });
+                const res = await fetch(`/api/orders/${id}/deliver/`, { 
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
                 const data = await res.json();
                 if (res.ok) {
                     showNotification('Order marked as delivered! Email sent to customer.', 'success');
