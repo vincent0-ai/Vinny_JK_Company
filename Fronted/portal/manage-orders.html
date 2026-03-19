@@ -59,6 +59,11 @@
             color: #721c24;
         }
 
+        .status-failed {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
         .status-completed {
             background: rgba(40, 167, 69, 0.1);
             color: #155724;
@@ -161,6 +166,7 @@
 
         function getStatusInfo(order) {
             if (order.is_cancelled) return { label: 'Cancelled', cls: 'status-cancelled' };
+            if (order.is_failed) return { label: 'Failed', cls: 'status-failed' };
             if (order.is_delivered) return { label: 'Delivered', cls: 'status-completed' };
             if (order.is_paid) return { label: 'Paid', cls: 'status-paid' };
             return { label: 'Pending', cls: 'status-pending' };

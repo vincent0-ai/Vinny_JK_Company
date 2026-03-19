@@ -807,6 +807,13 @@ def mpesa_callback(request):
             logger.warning(f"Payment failed: CheckoutID={checkout_request_id}, Code={result_code}, Desc={result_desc}")
             payment.status = 'Failed'
             payment.save()
+            
+            # Update order status to Failed
+            order = payment.order
+            order.is_failed = True
+            order.is_pending = False
+            order.save()
+            
             return Response({"ResultCode": 0, "ResultDesc": "Failure acknowledged"})
 
     except Exception as e:

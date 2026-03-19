@@ -74,6 +74,7 @@ class Order(models.Model):
     is_pending = models.BooleanField(default=True)
     is_out_for_delivery = models.BooleanField(default=False)
     is_restored = models.BooleanField(default=False)
+    is_failed = models.BooleanField(default=False)
     
     def __str__(self):
         return f"Order #{self.id} - {self.full_name}"

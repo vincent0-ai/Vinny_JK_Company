@@ -49,7 +49,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'vehicle_model', 'vehicle_make', 'vehicle_year', 'full_name',
             'phone_number', 'estate', 'street_address', 'is_delivered',
             'is_paid', 'is_cancelled', 'is_completed', 'is_pending',
-            'is_out_for_delivery', 'is_restored'
+            'is_out_for_delivery', 'is_restored', 'is_failed'
         ]
         read_only_fields = ['total_price']
 
