@@ -131,89 +131,97 @@
 {% endblock %}
 
 {% block content %}
-<div id="content-main">
-    <!-- Professional Dashboard Header -->
-    <div class="dashboard-stats">
-        <div class="dashboard-card">
-            <div class="card-info">
-                <h3>Total Revenue</h3>
-                <p id="dash-revenue">KES ...</p>
-            </div>
-            <div class="card-icon icon-rev"><i class="fas fa-coins"></i></div>
+<!-- Professional Dashboard Stats -->
+<div class="dashboard-stats" style="margin-top: -10px; margin-bottom: 20px; gap: 15px;">
+    <div class="dashboard-card">
+        <div class="card-info">
+            <h3>Total Revenue</h3>
+            <p id="dash-revenue">KES ...</p>
         </div>
-        <div class="dashboard-card">
-            <div class="card-info">
-                <h3>Total Orders</h3>
-                <p id="dash-orders">...</p>
-            </div>
-            <div class="card-icon icon-ord"><i class="fas fa-shopping-bag"></i></div>
-        </div>
-        <div class="dashboard-card">
-            <div class="card-info">
-                <h3>Pending Bookings</h3>
-                <p id="dash-bookings">...</p>
-            </div>
-            <div class="card-icon icon-book"><i class="fas fa-clock"></i></div>
-        </div>
+        <div class="card-icon icon-rev"><i class="fas fa-coins"></i></div>
     </div>
-
-    <!-- Charts row -->
-    <div class="charts-row">
-        <div class="chart-box">
-            <h4 style="margin-top: 0; color: #4a5568;">Revenue Overview</h4>
-            <canvas id="adminRevenueChart" height="100"></canvas>
+    <div class="dashboard-card">
+        <div class="card-info">
+            <h3>Total Orders</h3>
+            <p id="dash-orders">...</p>
         </div>
-        <div class="chart-box">
-            <h4 style="margin-top: 0; color: #4a5568;">Booking Status</h4>
-            <canvas id="adminBookingChart"></canvas>
-        </div>
+        <div class="card-icon icon-ord"><i class="fas fa-shopping-bag"></i></div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const response = await fetch('/api/admin/dashboard-stats/');
-                const data = await response.json();
-
-                document.getElementById('dash-revenue').innerText = 'KES ' + data.total_revenue.toLocaleString();
-                document.getElementById('dash-orders').innerText = data.total_orders;
-                document.getElementById('dash-bookings').innerText = data.pending_bookings;
-
-                // Revenue Chart
-                new Chart(document.getElementById('adminRevenueChart'), {
-                    type: 'line',
-                    data: {
-                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                        datasets: [{
-                            label: 'Revenue',
-                            data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
-                            borderColor: '#007bff',
-                            backgroundColor: 'rgba(0, 123, 255, 0.05)',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: { plugins: { legend: { display: false } }, scales: { y: { display: false } } }
-                });
-
-                // Booking Chart
-                const bData = data.booking_status_distribution;
-                new Chart(document.getElementById('adminBookingChart'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: Object.keys(bData),
-                        datasets: [{
-                            data: Object.values(bData),
-                            backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545']
-                        }]
-                    },
-                    options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-                });
-
-            } catch (e) { console.error('Dashboard load failed', e); }
-        });
-    </script>
-
-    {{ block.super }}
+    <div class="dashboard-card">
+        <div class="card-info">
+            <h3>Pending Bookings</h3>
+            <p id="dash-bookings">...</p>
+        </div>
+        <div class="card-icon icon-book"><i class="fas fa-clock"></i></div>
+    </div>
 </div>
+
+<!-- Charts row -->
+<div class="charts-row" style="margin-bottom: 20px; gap: 15px;">
+    <div class="chart-box">
+        <h4 style="margin-top: 0; margin-bottom: 10px; color: #4a5568; font-size: 0.9rem;">Revenue Overview</h4>
+        <canvas id="adminRevenueChart" height="100"></canvas>
+    </div>
+    <div class="chart-box">
+        <h4 style="margin-top: 0; margin-bottom: 10px; color: #4a5568; font-size: 0.9rem;">Booking Status</h4>
+        <canvas id="adminBookingChart"></canvas>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('/api/admin/dashboard-stats/');
+            const data = await response.json();
+
+            document.getElementById('dash-revenue').innerText = 'KES ' + data.total_revenue.toLocaleString();
+            document.getElementById('dash-orders').innerText = data.total_orders;
+            document.getElementById('dash-bookings').innerText = data.pending_bookings;
+
+            // Revenue Chart
+            new Chart(document.getElementById('adminRevenueChart'), {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.05)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }, 
+                    scales: { y: { display: false }, x: { grid: { display: false } } } 
+                }
+            });
+
+            // Booking Chart
+            const bData = data.booking_status_distribution;
+            new Chart(document.getElementById('adminBookingChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(bData),
+                    datasets: [{
+                        data: Object.values(bData),
+                        backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545']
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%', 
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10 } } } } 
+                }
+            });
+
+        } catch (e) { console.error('Dashboard load failed', e); }
+    });
+</script>
+
+{{ block.super }}
 {% endblock %}
