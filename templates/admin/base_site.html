@@ -4,21 +4,32 @@
 {% block title %}{{ title }} | VINNY KJ Admin{% endblock %}
 
 {% block branding %}
-<h1 id="site-name">
-    <a href="{% url 'admin:index' %}"
-        style="font-family: 'Montserrat', sans-serif; font-weight: 800; color: #007bff; letter-spacing: -1px;">
-        VINNY KJ <span style="font-size: 0.6em; color: #718096; font-weight: 500;">PORTAL</span>
-    </a>
-    <a href="/portal/"
-        style="font-family: 'Inter', sans-serif; font-size: 0.55em; color: white !important; background: #007bff; padding: 4px 12px; border-radius: 6px; margin-left: 12px; font-weight: 600; text-decoration: none !important; vertical-align: middle;">
-        Dashboard ↗
-    </a>
-</h1>
+<div class="header-flex-container">
+    <div class="branding-left">
+        <h1 id="site-name">
+            <a href="{% url 'admin:index' %}">
+                VINNY KJ <span>PORTAL</span>
+            </a>
+        </h1>
+        <a href="/portal/" class="dashboard-link">Dashboard ↗</a>
+    </div>
+    {% if user.is_authenticated %}
+    <div class="user-controls">
+        <span class="username-tag"><i class="fas fa-user-circle"></i> {{ user.username }}</span>
+        <form action="{% url 'admin:logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn-header">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
 
 {% block extrastyle %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800&display=swap"
-    rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     /* Styling Django Admin to match professional portal */
     :root {
@@ -34,8 +45,7 @@
         padding: 15px 40px;
     }
 
-    #header a:link,
-    #header a:visited {
+    #header a:link, #header a:visited {
         color: #4a5568;
     }
 
@@ -68,8 +78,7 @@
         margin-bottom: 20px !important;
     }
 
-    .module th,
-    .module td {
+    .module th, .module td {
         border-bottom: 1px solid #f4f7fe !important;
     }
 
@@ -81,8 +90,7 @@
         border-bottom: 1px solid #f4f7fe !important;
     }
 
-    input[type=submit].default,
-    .submit-row input.default {
+    input[type=submit].default, .submit-row input.default {
         background: var(--primary) !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
@@ -91,57 +99,109 @@
     }
 
     #user-tools {
-        color: #718096 !important;
+        display: none !important;
     }
 
-    #user-tools a {
-        color: var(--primary) !important;
+    /* Custom Header Flex */
+    .header-flex-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-width: 0;
     }
 
-    /* Responsive adjustments for Django admin */
+    .branding-left {
+        display: flex;
+        align-items: center;
+    }
+
+    #branding h1 a {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        letter-spacing: -1px;
+        text-decoration: none;
+    }
+
+    #branding h1 a span {
+        font-size: 0.6em;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    .dashboard-link {
+        font-family: 'Inter', sans-serif;
+        font-size: 0.75rem !important;
+        color: white !important;
+        background: #007bff;
+        padding: 6px 14px;
+        border-radius: 8px;
+        margin-left: 20px;
+        font-weight: 600;
+        text-decoration: none !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 123, 255, 0.2);
+    }
+
+    .user-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .username-tag {
+        color: #718096;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    .logout-btn-header {
+        background: rgba(220, 53, 69, 0.08);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 0.85rem;
+    }
+
+    .logout-btn-header:hover {
+        background: rgba(220, 53, 69, 0.15);
+    }
+
+    /* Responsive adjustments */
     @media (max-width: 992px) {
-        #header {
-            padding: 12px 20px;
-        }
-
-        #content {
-            padding: 20px !important;
-        }
-
-        div.breadcrumbs {
-            padding: 8px 20px !important;
-        }
+        #header { padding: 12px 20px; }
+        #content { padding: 20px !important; }
+        div.breadcrumbs { padding: 8px 20px !important; }
     }
 
     @media (max-width: 768px) {
-        #header {
-            padding: 10px 15px;
+        #header { padding: 10px 15px; }
+        #content { padding: 15px 10px !important; }
+        div.breadcrumbs { padding: 8px 15px !important; }
+        
+        .header-flex-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
         }
-
-        #content {
-            padding: 15px 10px !important;
+        
+        .user-controls {
+            width: 100%;
+            justify-content: space-between;
+            padding-top: 8px;
+            border-top: 1px solid #f4f7fe;
         }
-
-        div.breadcrumbs {
-            padding: 8px 15px !important;
-        }
-
-        .module {
-            border-radius: 10px !important;
-            margin-bottom: 20px !important;
+        
+        .dashboard-link {
+            font-size: 0.7rem !important;
+            padding: 4px 10px;
+            margin-left: 10px;
         }
     }
 </style>
 {% endblock %}
 
-{% block nav-global %}
-<div style="float: right; margin-top: -45px; font-size: 0.85rem; color: #718096;">
-    {% if user.is_authenticated %}
-        <strong>{{ user.username }}</strong> | 
-        <form action="{% url 'admin:logout' %}" method="post" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" style="background: none; border: none; padding: 0; color: #dc3545; font-weight: 600; cursor: pointer; display: inline-block;">Logout</button>
-        </form>
-    {% endif %}
-</div>
-{% endblock %}
+{% block nav-global %}{% endblock %}
