@@ -13,6 +13,10 @@
         style="font-family: 'Inter', sans-serif; font-size: 0.55em; color: white !important; background: #007bff; padding: 4px 12px; border-radius: 6px; margin-left: 12px; font-weight: 600; text-decoration: none !important; vertical-align: middle;">
         Dashboard ↗
     </a>
+    <a href="{% url 'admin:logout' %}"
+        style="font-family: 'Inter', sans-serif; font-size: 0.55em; color: #718096 !important; background: #f8fafc; padding: 4px 12px; border: 1px solid #edf2f7; border-radius: 6px; margin-left: 8px; font-weight: 600; text-decoration: none !important; vertical-align: middle;">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
 </h1>
 {% endblock %}
 
@@ -134,4 +138,11 @@
 </style>
 {% endblock %}
 
-{% block nav-global %}{% endblock %}
+{% block nav-global %}
+<div style="float: right; margin-top: -45px; font-size: 0.85rem; color: #718096;">
+    {% if user.is_authenticated %}
+        <strong>{{ user.username }}</strong> | 
+        <a href="{% url 'admin:logout' %}" style="color: #dc3545; font-weight: 600;">Logout</a>
+    {% endif %}
+</div>
+{% endblock %}
