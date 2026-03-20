@@ -895,3 +895,49 @@ window.addEventListener('scroll', function () {
     backToTop.classList.toggle('show', window.scrollY > 400);
   }
 });
+
+// ---- Contact Form Handler ----
+document.addEventListener('DOMContentLoaded', () => {
+  const contactForm = document.getElementById('contactForm');
+  if (contactForm) {
+    contactForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.textContent;
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      
+      const formData = {
+        name: document.getElementById('contactName').value,
+        phone_number: document.getElementById('contactPhone').value,
+        email: document.getElementById('contactEmail').value,
+        subject: document.getElementById('contactSubject').value,
+        message: document.getElementById('contactMessage').value
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/contact/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to send message');
+        }
+        
+        alert('Thank you! Your message has been sent successfully.');
+        contactForm.reset();
+      } catch (err) {
+        console.error('Contact form error:', err);
+        alert('Error: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+      }
+    });
+  }
+});

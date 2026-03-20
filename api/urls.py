@@ -9,7 +9,8 @@ from .views import (
     bookings_summary, booking_revenue, daily_bookings, monthly_bookings, weekly_bookings,
     CartCreateView, CartDetailView, add_to_cart, UpdateCartItemView,
     initiate_mpesa_payment, mpesa_callback, initiate_stripe_payment,
-    GalleryListCreateView, GalleryDetailView, admin_dashboard_stats
+    GalleryListCreateView, GalleryDetailView, admin_dashboard_stats,
+    ContactCreateView
 )
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -62,4 +63,7 @@ urlpatterns = [
     # Admin Dashboard Stats
     path('admin/login/', obtain_auth_token, name='admin-login'),
     path('admin/dashboard-stats/', admin_dashboard_stats, name='admin-dashboard-stats'),
+
+    # Contact
+    path('contact/', ContactCreateView.as_view(), name='contact-create'),
 ]

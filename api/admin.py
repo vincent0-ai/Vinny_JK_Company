@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Services, Product, Order, Booking, Category, OrderItem, Gallery
+from .models import Services, Product, Order, Booking, Category, OrderItem, Gallery, ContactMessage
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -25,3 +25,10 @@ class BookingAdmin(admin.ModelAdmin):
     search_fields = ('full_name', 'phone_number', 'vehicle_model', 'number_plate')
 
 admin.site.register(Booking, BookingAdmin)
+
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'subject', 'created_at', 'is_read')
+    list_filter = ('is_read', 'created_at')
+    search_fields = ('name', 'email', 'subject', 'message')
+
+admin.site.register(ContactMessage, ContactMessageAdmin)

@@ -104,18 +104,24 @@ def send_receipt_email(to_email, subject, message_body):
         plain_message = strip_tags(html_message)
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', getattr(settings, 'EMAIL_HOST_USER', 'noreply@vinkj.com'))
         
+        # We set fail_silently=False during setup/debugging to see real SMTP errors in logs
+        # but keep it True or wrap in try-except for production stability.
+        # Here we use logger to capture the error while still preventing a crash.
         send_mail(
             subject=subject,
             message=plain_message,
             from_email=from_email,
             recipient_list=[to_email],
             html_message=html_message,
-            fail_silently=True,
+            fail_silently=False, 
         )
-        logger.info(f"Receipt Email sent to {to_email} (or failed silently without crashing)")
+        logger.info(f"Email successfully sent to {to_email} with subject: {subject}")
         return True
     except Exception as e:
-        logger.error(f"Error sending email receipt to {to_email}: {e}")
+        logger.error(f"SMTP Error: Failed to send email to {to_email}. Error: {str(e)}")
+        # If it's a connection error, it might be due to missing/wrong credentials in .env
+        if "Authentication failed" in str(e) or "SMTPAuthenticationError" in str(e):
+            logger.error("Check EMAIL_HOST_USER and EMAIL_HOST_PASSWORD in your .env file.")
         return False
 
 

@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from .models import Services, Product, Order, Booking, Category, Cart, CartItem, OrderItem, Gallery
+from .models import Services, Product, Order, Booking, Category, Cart, CartItem, OrderItem, Gallery, ContactMessage
 
 
 class GallerySerializer(serializers.ModelSerializer):
@@ -83,3 +83,8 @@ class CartSerializer(serializers.ModelSerializer):
 
     def get_grand_total(self, obj):
         return sum(item.total_price for item in obj.items.all())
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = '__all__'

@@ -1,5 +1,5 @@
 from rest_framework import generics
-from .models import Services, Product, Order, Booking, Cart, CartItem, Payment, OrderItem, Gallery
+from .models import Services, Product, Order, Booking, Cart, CartItem, Payment, OrderItem, Gallery, ContactMessage
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
@@ -16,7 +16,8 @@ from .serializers import (
     BookingSerializer,
     CartSerializer,
     CartItemSerializer,
-    GallerySerializer
+    GallerySerializer,
+    ContactMessageSerializer
 )
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -857,3 +858,29 @@ def initiate_stripe_payment(request, order_id):
          })
     
     return Response({"error": "Failed to create payment intent"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class ContactCreateView(generics.CreateAPIView):
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        
+        # Send email notification to business
+        try:
+            subject = f"New Contact Inquiry: {instance.subject}"
+            email_body = (
+                f"You have received a new message from your website contact form:<br><br>"
+                f"<b>Name:</b> {instance.name}<br>"
+                f"<b>Email:</b> {instance.email or 'Not provided'}<br>"
+                f"<b>Phone:</b> {instance.phone_number}<br>"
+                f"<b>Subject:</b> {instance.subject}<br><br>"
+                f"<b>Message:</b><br>{instance.message}<br><br>"
+                f"You can view this message in the admin panel."
+            )
+            # Send to the business email (using DEFAULT_FROM_EMAIL or a specific address)
+            business_email = getattr(settings, 'EMAIL_HOST_USER', 'vinkjautoaccesories@gmail.com')
+            send_receipt_email(business_email, subject, email_body)
+            logger.info(f"Contact inquiry email sent for message {instance.id}")
+        except Exception as e:
+            logger.error(f"Failed to send contact inquiry email for message {instance.id}: {e}")
