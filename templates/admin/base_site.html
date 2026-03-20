@@ -11,7 +11,7 @@
                 VINNY KJ <span>PORTAL</span>
             </a>
         </h1>
-        <a href="/portal/" class="dashboard-link">Dashboard ↗</a>
+        <a href="/portal/" class="dashboard-link">Dashboard</a>
     </div>
     {% if user.is_authenticated %}
     <div class="user-controls">
@@ -19,7 +19,7 @@
         <form action="{% url 'admin:logout' %}" method="post">
             {% csrf_token %}
             <button type="submit" class="logout-btn-header">
-                <i class="fas fa-sign-out-alt"></i> Logout
+                Logout
             </button>
         </form>
     </div>
@@ -28,7 +28,8 @@
 {% endblock %}
 
 {% block extrastyle %}
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@800&display=swap"
+    rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
     /* Styling Django Admin to match professional portal */
@@ -45,7 +46,8 @@
         padding: 15px 40px;
     }
 
-    #header a:link, #header a:visited {
+    #header a:link,
+    #header a:visited {
         color: #4a5568;
     }
 
@@ -78,7 +80,8 @@
         margin-bottom: 20px !important;
     }
 
-    .module th, .module td {
+    .module th,
+    .module td {
         border-bottom: 1px solid #f4f7fe !important;
     }
 
@@ -90,7 +93,8 @@
         border-bottom: 1px solid #f4f7fe !important;
     }
 
-    input[type=submit].default, .submit-row input.default {
+    input[type=submit].default,
+    .submit-row input.default {
         background: var(--primary) !important;
         border-radius: 10px !important;
         padding: 10px 20px !important;
@@ -172,29 +176,45 @@
 
     /* Responsive adjustments */
     @media (max-width: 992px) {
-        #header { padding: 12px 20px; }
-        #content { padding: 20px !important; }
-        div.breadcrumbs { padding: 8px 20px !important; }
+        #header {
+            padding: 12px 20px;
+        }
+
+        #content {
+            padding: 20px !important;
+        }
+
+        div.breadcrumbs {
+            padding: 8px 20px !important;
+        }
     }
 
     @media (max-width: 768px) {
-        #header { padding: 10px 15px; }
-        #content { padding: 15px 10px !important; }
-        div.breadcrumbs { padding: 8px 15px !important; }
-        
+        #header {
+            padding: 10px 15px;
+        }
+
+        #content {
+            padding: 15px 10px !important;
+        }
+
+        div.breadcrumbs {
+            padding: 8px 15px !important;
+        }
+
         .header-flex-container {
             flex-direction: column;
             align-items: flex-start;
             gap: 12px;
         }
-        
+
         .user-controls {
             width: 100%;
             justify-content: space-between;
             padding-top: 8px;
             border-top: 1px solid #f4f7fe;
         }
-        
+
         .dashboard-link {
             font-size: 0.7rem !important;
             padding: 4px 10px;
