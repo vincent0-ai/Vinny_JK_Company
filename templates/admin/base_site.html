@@ -15,7 +15,7 @@
     </div>
     {% if user.is_authenticated %}
     <div class="user-controls">
-        <span class="username-tag"><i class="fas fa-user-circle"></i> {{ user.username }}</span>
+        <span class="username-tag">{{ user.username }}</span>
         <form action="{% url 'admin:logout' %}" method="post">
             {% csrf_token %}
             <button type="submit" class="logout-btn-header">
