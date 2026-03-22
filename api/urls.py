@@ -61,7 +61,7 @@ urlpatterns = [
     path('gallery/<int:pk>/', GalleryDetailView.as_view(), name='gallery-detail'),
 
     # Admin Dashboard Stats
-    path('admin/login/', obtain_auth_token, name='admin-login'),
+    path('admin/login/', csrf_exempt(obtain_auth_token), name='admin-login'),
     path('admin/dashboard-stats/', admin_dashboard_stats, name='admin-dashboard-stats'),
 
     # Contact

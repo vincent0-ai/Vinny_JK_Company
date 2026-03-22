@@ -321,6 +321,9 @@ def mark_order_delivered(request, order_id):
         order.is_completed = True
         order.is_pending = False
         order.is_out_for_delivery = False
+        
+        # When an admin marks an order as delivered, we assume payment was collected (for COD)
+        order.is_paid = True
         order.save()
 
         # Send delivery confirmation email
@@ -570,7 +573,11 @@ def weekly_bookings(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def admin_dashboard_stats(request):
-    total_revenue = Payment.objects.filter(status='Completed').aggregate(total=Sum('amount'))['total'] or 0
+    # Total Revenue = Paid Orders + Completed Bookings
+    order_revenue = Order.objects.filter(is_paid=True).aggregate(total=Sum('total_price'))['total'] or 0
+    booking_revenue = Booking.objects.filter(status='completed').aggregate(total=Sum('total_price'))['total'] or 0
+    total_revenue = order_revenue + booking_revenue
+    
     total_orders = Order.objects.count()
     pending_bookings = Booking.objects.filter(status='pending').count()
     low_stock_count = Product.objects.filter(stock_quantity__lt=5).count()
@@ -578,31 +585,49 @@ def admin_dashboard_stats(request):
     # Booking status distribution
     booking_stats = Booking.objects.values('status').annotate(count=Count('id'))
     
-    # Revenue Trends (Last 7 Days)
+    # Revenue Trends (Last 7 Days) - Combining Orders and Bookings
     today = timezone.now().date()
     seven_days_ago = today - timedelta(days=6)
     
-    revenue_query = Payment.objects.filter(
-        status='Completed', 
+    # Daily Paid Orders
+    order_trends = Order.objects.filter(
+        is_paid=True, 
         created_at__date__gte=seven_days_ago
     ).annotate(
         day=TruncDay('created_at')
     ).values('day').annotate(
-        total=Sum('amount')
-    ).order_by('day')
+        total=Sum('total_price')
+    )
+
+    # Daily Completed Bookings
+    booking_trends = Booking.objects.filter(
+        status='completed', 
+        booking_date__gte=seven_days_ago
+    ).annotate(
+        day=TruncDay('booking_date') if 'booking_date' else TruncDay('created_at') # Fallback to created_at if booking_date is null
+    ).values('day').annotate(
+        total=Sum('total_price')
+    )
+
+    # Combine into a single map {date_str: amount}
+    combined_trends = {}
+    for entry in order_trends:
+        d_str = entry['day'].strftime('%Y-%m-%d')
+        combined_trends[d_str] = combined_trends.get(d_str, 0) + float(entry['total'])
+    
+    for entry in booking_trends:
+        d_str = entry['day'].strftime('%Y-%m-%d')
+        combined_trends[d_str] = combined_trends.get(d_str, 0) + float(entry['total'])
     
     # Prepare labels and data for Chart.js
     labels = []
     revenue_data = []
     
-    # Fill in zeros for days with no sales
     for i in range(7):
         date = seven_days_ago + timedelta(days=i)
-        labels.append(date.strftime('%a')) # 'Mon', 'Tue', etc.
-        
-        # Find matching revenue in query
-        day_rev = next((item['total'] for item in revenue_query if item['day'].date() == date), 0)
-        revenue_data.append(float(day_rev))
+        d_str = date.strftime('%Y-%m-%d')
+        labels.append(date.strftime('%b %d')) # e.g. "Oct 24"
+        revenue_data.append(combined_trends.get(d_str, 0))
     
     return Response({
         "total_revenue": total_revenue,
