@@ -35,6 +35,8 @@ logger = logging.getLogger(__name__)
 class ServicesListCreateView(generics.ListCreateAPIView):
     queryset = Services.objects.all()
     serializer_class = ServicesSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
 
 class ServicesDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -44,6 +46,8 @@ class ServicesDetailView(generics.RetrieveUpdateDestroyAPIView):
 class ProductListCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -53,6 +57,8 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 class GalleryListCreateView(generics.ListCreateAPIView):
     queryset = Gallery.objects.all()
     serializer_class = GallerySerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
 class GalleryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Gallery.objects.all()
@@ -71,6 +77,8 @@ class OrderListView(generics.ListAPIView):
 class OrderDetailView(generics.RetrieveAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
 class BookingCreateView(generics.CreateAPIView):
     queryset = Booking.objects.all()
@@ -650,13 +658,19 @@ def get_available_slots(request):
 class CartCreateView(generics.CreateAPIView):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
 class CartDetailView(generics.RetrieveAPIView):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
     lookup_field = 'id'
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def add_to_cart(request, cart_id):
     cart = get_object_or_404(Cart, id=cart_id)
     product_id = request.data.get('product_id')
@@ -685,7 +699,8 @@ class UpdateCartItemView(generics.RetrieveUpdateDestroyAPIView):
     queryset = CartItem.objects.all()
     serializer_class = CartItemSerializer
     lookup_field = 'pk' 
-
+    authentication_classes = []
+    permission_classes = [AllowAny]
     def perform_update(self, serializer):
         # Optional: check stock on update if quantity increases
         instance = serializer.instance
@@ -701,6 +716,8 @@ class UpdateCartItemView(generics.RetrieveUpdateDestroyAPIView):
 # Payment Views
 # Payment Views
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def initiate_mpesa_payment(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     phone_number = request.data.get('phone_number')
@@ -843,6 +860,8 @@ def mpesa_callback(request):
         return Response({"ResultCode": 1, "ResultDesc": "Internal Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def initiate_stripe_payment(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     
@@ -870,7 +889,8 @@ def initiate_stripe_payment(request, order_id):
 class ContactCreateView(generics.CreateAPIView):
     queryset = ContactMessage.objects.all()
     serializer_class = ContactMessageSerializer
-    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
     def perform_create(self, serializer):
         instance = serializer.save()
