@@ -118,6 +118,8 @@ def create_order(request):
                     'price_at_order': price_at_order
                 })
 
+            payment_method = request.data.get('payment_method', 'M-Pesa')
+
             order = Order.objects.create(
                 total_price=total_order_price,
                 auto_part=request.data.get('auto_part'),
@@ -131,8 +133,6 @@ def create_order(request):
                 street_address=request.data.get('street_address'),
                 payment_method=payment_method
             )
-
-            payment_method = request.data.get('payment_method', 'M-Pesa')
             
             for item_data in order_items_to_create:
                 OrderItem.objects.create(

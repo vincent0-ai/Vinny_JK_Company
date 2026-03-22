@@ -171,10 +171,14 @@
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            const response = await fetch('/api/admin/dashboard-stats/');
+            const response = await fetch('/api/admin/dashboard-stats/', {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
 
-            document.getElementById('dash-revenue').innerText = 'KES ' + data.total_revenue.toLocaleString();
+            document.getElementById('dash-revenue').innerText = 'KES ' + (data.total_revenue || 0).toLocaleString();
             document.getElementById('dash-orders').innerText = data.total_orders;
             document.getElementById('dash-bookings').innerText = data.pending_bookings;
 
