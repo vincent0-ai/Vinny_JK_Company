@@ -1,7 +1,7 @@
 from rest_framework import generics
 from .models import Services, Product, Order, Booking, Cart, CartItem, Payment, OrderItem, Gallery, ContactMessage
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAdminUser
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
 from django.db.models.functions import TruncDay, TruncMonth,TruncWeek
 from rest_framework import status
@@ -89,6 +89,8 @@ class BookingDetailView(generics.RetrieveAPIView):
 #calculating total price for order
 
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def create_order(request):
     try:
         items_data = request.data.get('items', [])
@@ -170,6 +172,8 @@ def create_order(request):
     #calculating total price for booking
 
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def create_booking(request):
     try:
         services_id = request.data.get('services')
