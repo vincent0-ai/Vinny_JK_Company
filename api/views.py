@@ -32,7 +32,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ServicesListCreateView(generics.ListCreateAPIView):
+class ServicesListCreateView(generics.ListAPIView):
     queryset = Services.objects.all()
     serializer_class = ServicesSerializer
     authentication_classes = []
@@ -42,8 +42,9 @@ class ServicesListCreateView(generics.ListCreateAPIView):
 class ServicesDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Services.objects.all()
     serializer_class = ServicesSerializer
+    permission_classes = [IsAdminUser]
 
-class ProductListCreateView(generics.ListCreateAPIView):
+class ProductListCreateView(generics.ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     authentication_classes = []
@@ -53,8 +54,9 @@ class ProductListCreateView(generics.ListCreateAPIView):
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [IsAdminUser]
 
-class GalleryListCreateView(generics.ListCreateAPIView):
+class GalleryListCreateView(generics.ListAPIView):
     queryset = Gallery.objects.all()
     serializer_class = GallerySerializer
     authentication_classes = []
@@ -63,6 +65,7 @@ class GalleryListCreateView(generics.ListCreateAPIView):
 class GalleryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Gallery.objects.all()
     serializer_class = GallerySerializer
+    permission_classes = [IsAdminUser]
 
 class OrderCreateView(generics.CreateAPIView):
     queryset = Order.objects.all()
@@ -275,6 +278,7 @@ def create_booking(request):
 #cancel order and restore stock
 CANCELLATION_LIMIT_HOURS = 2
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def cancel_order(request, order_id):
     try:
         with transaction.atomic():
@@ -302,6 +306,7 @@ def cancel_order(request, order_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def mark_order_delivered(request, order_id):
     try:
         order = Order.objects.get(id=order_id)
@@ -343,6 +348,7 @@ def mark_order_delivered(request, order_id):
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def confirm_order(request, order_id):
     try:
         order = Order.objects.get(id=order_id)
@@ -357,7 +363,7 @@ def confirm_order(request, order_id):
 
  # logic for booking cancellation
 @api_view(['POST'])
-
+@permission_classes([IsAdminUser])
 def cancel_booking(request, booking_id):
     try:
         with transaction.atomic():
@@ -416,6 +422,7 @@ def cancel_booking(request, booking_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def confirm_booking(request, booking_id):
     booking = Booking.objects.get(id=booking_id)
 
@@ -461,6 +468,7 @@ def confirm_booking(request, booking_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def complete_booking(request, booking_id):
     booking = Booking.objects.get(id=booking_id)
 

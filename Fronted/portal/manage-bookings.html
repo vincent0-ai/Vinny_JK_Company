@@ -277,6 +277,14 @@
             }
         }
 
+        async function updateStatus(btn, id, action) {
+            if (action === 'confirm') {
+                await confirmBooking(btn, id);
+            } else if (action === 'complete') {
+                await completeBooking(btn, id);
+            }
+        }
+
         function showNotification(message, type) {
             const existing = document.querySelector('.portal-notification');
             if (existing) existing.remove();
