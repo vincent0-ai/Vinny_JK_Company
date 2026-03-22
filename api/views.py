@@ -26,11 +26,25 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from rest_framework import permissions
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
 from .utils import MpesaClient, create_stripe_payment_intent, send_receipt_email
 import json
 import logging
 
 logger = logging.getLogger(__name__)
+
+class CustomObtainAuthToken(ObtainAuthToken):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key})
 
 class ServicesListCreateView(generics.ListAPIView):
     queryset = Services.objects.all()
@@ -956,3 +970,5 @@ class ContactDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = ContactMessage.objects.all()
     serializer_class = ContactMessageSerializer
     permission_classes = [permissions.IsAdminUser]
+
+

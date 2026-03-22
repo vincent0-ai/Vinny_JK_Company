@@ -11,7 +11,7 @@ from .views import (
     CartCreateView, CartDetailView, add_to_cart, UpdateCartItemView,
     initiate_mpesa_payment, mpesa_callback, initiate_stripe_payment,
     GalleryListCreateView, GalleryDetailView, admin_dashboard_stats,
-    ContactCreateView, ContactListView, ContactDetailView
+    ContactCreateView, ContactListView, ContactDetailView, CustomObtainAuthToken
 )
 from rest_framework.authtoken.views import obtain_auth_token
 
@@ -62,7 +62,7 @@ urlpatterns = [
     path('gallery/<int:pk>/', GalleryDetailView.as_view(), name='gallery-detail'),
 
     # Admin Dashboard Stats
-    path('admin/login/', csrf_exempt(obtain_auth_token), name='admin-login'),
+    path('admin/login/', CustomObtainAuthToken.as_view(), name='admin-login'),
     path('admin/dashboard-stats/', admin_dashboard_stats, name='admin-dashboard-stats'),
 
     # Contact
