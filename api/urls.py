@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.decorators.csrf import csrf_exempt
 from .views import cancel_order, cancel_booking, mark_order_delivered, confirm_order
 from .views import (
     ServicesListCreateView, ServicesDetailView,
