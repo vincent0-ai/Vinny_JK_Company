@@ -955,7 +955,7 @@ class ContactCreateView(generics.CreateAPIView):
                 f"You can view this message in the admin panel."
             )
             # Send to the business email (using DEFAULT_FROM_EMAIL or a specific address)
-            business_email = getattr(settings, 'EMAIL_HOST_USER', 'vinkjautoaccesories@gmail.com')
+            business_email = getattr(settings, 'EMAIL_HOST_USER', 'vinkjautoservices@gmail.com')
             send_receipt_email(business_email, subject, email_body)
             logger.info(f"Contact inquiry email sent for message {instance.id}")
         except Exception as e:

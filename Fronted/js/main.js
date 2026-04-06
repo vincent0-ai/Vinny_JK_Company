@@ -709,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <h2 style="margin: 0; color: #d32f2f; font-weight: 800;">VIN-KJ</h2>
               <p style="margin: 0; font-size: 0.9rem; color: #555;">AUTO SERVICES</p>
               <p style="margin: 0; font-size: 0.8rem; color: #777;">Lanet Road, off Baricho Road, Nairobi</p>
-              <p style="margin: 0; font-size: 0.8rem; color: #777;">0718885303 | vinkjautoaccesories@gmail.com</p>
+              <p style="margin: 0; font-size: 0.8rem; color: #777;">0718885303 | vinkjautoservices@gmail.com</p>
             </div>
             
             <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; border-bottom: 2px solid #eee; padding-bottom: 1rem;">
@@ -900,15 +900,15 @@ window.addEventListener('scroll', function () {
 document.addEventListener('DOMContentLoaded', () => {
   const contactForm = document.getElementById('contactForm');
   if (contactForm) {
-    contactForm.addEventListener('submit', async function(e) {
+    contactForm.addEventListener('submit', async function (e) {
       e.preventDefault();
-      
+
       const submitBtn = this.querySelector('button[type="submit"]');
       const originalBtnText = submitBtn.textContent;
-      
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'Sending...';
-      
+
       const formData = {
         name: document.getElementById('contactName').value,
         phone_number: document.getElementById('contactPhone').value,
@@ -916,19 +916,19 @@ document.addEventListener('DOMContentLoaded', () => {
         subject: document.getElementById('contactSubject').value,
         message: document.getElementById('contactMessage').value
       };
-      
+
       try {
         const response = await fetch(`${API_BASE_URL}/contact/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
         });
-        
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to send message');
         }
-        
+
         alert('Thank you! Your message has been sent successfully.');
         contactForm.reset();
       } catch (err) {
