@@ -20,18 +20,65 @@ class Category(models.Model):
     class Meta:
         verbose_name_plural = "Categories"
 
+# adding multiple images to services
+class ServiceImage(models.Model):
+
+    service = models.ForeignKey(
+        Services,
+        related_name='images',
+        on_delete=models.CASCADE
+    )
+
+    image = models.ImageField(upload_to='services/')
+    service_type = models.CharField(max_length=255, blank=True, null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.service.name} Image"
+
 
 class Product(models.Model):
-    category = models.ForeignKey(Category, related_name='products', on_delete=models.SET_NULL, null=True, blank=True)
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=False)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='products/')
+
+    CATEGORY_CHOICES = [
+        ('Electrical', 'Electrical'),
+        ('Spare parts', 'Spare parts'),
+        ('Service parts', 'Service parts'),
+        ('Lubricants', 'Lubricants'),
+    ]
+    category = models.CharField(
+    max_length=50,
+    choices=CATEGORY_CHOICES,
+    default='Electrical'
+)
+    name = models.CharField(max_length=255, blank=True,null=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True,null=True)
+    description = models.TextField(blank=True,null=True)
+    image = models.ImageField(upload_to='products/', blank=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_available = models.BooleanField(default=True)
     stock_quantity = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+
+
+    @property
+    def current_offer(self):
+        now = timezone.now()
+        # Prefetching ensures we don't hit the DB if `offers` is prefetched
+        for offer in self.offers.all():
+            if offer.is_active and offer.start_date <= now <= offer.end_date:
+                return offer
+        return None
+
+    @property
+    def discounted_price(self):
+        offer = self.current_offer
+        if offer and self.price:
+            discount = (self.price * offer.discount_percentage) / 100
+            return round(self.price - discount, 2)
+        return self.price
 
     def __str__(self):
         return self.name
@@ -53,12 +100,30 @@ class Product(models.Model):
             self.is_available = True
         self.save()
 
+        # adding multiple images to products
+class ProductImage(models.Model):
+
+    product = models.ForeignKey(
+        Product,
+        related_name='images',
+        on_delete=models.CASCADE
+    )
+
+    image = models.ImageField(upload_to='products/')
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    car_models = models.CharField(max_length=255, blank=True, null=True, help_text="Comma separated list of car models")
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.product.name} Image"
 
 class Order(models.Model):
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    auto_part = models.CharField(max_length=255, blank=True, null=True) # Keeping for general notes/ref
+    auto_part = models.CharField(max_length=255, blank=True, null=True) 
     vehicle_model = models.CharField(max_length=240, blank=True, null=True)
     vehicle_make = models.CharField(max_length=20, blank=True, null=True)
     vehicle_year = models.CharField(max_length=20, blank=True, null=True)
@@ -77,6 +142,10 @@ class Order(models.Model):
     is_failed = models.BooleanField(default=False)
     is_confirmed = models.BooleanField(default=False)
     payment_method = models.CharField(max_length=50, default='M-Pesa')
+    description = models.TextField(blank=True, null=True)
+
+    
+
     
     def __str__(self):
         return f"Order #{self.id} - {self.full_name}"
@@ -142,12 +211,12 @@ class CartItem(models.Model):
 
 class Payment(models.Model):
     order = models.ForeignKey(Order, related_name='payments', on_delete=models.CASCADE)
-    transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True) # CheckoutRequestID or Stripe Intent ID
+    transaction_id = models.CharField(max_length=100, unique=True, null=True, blank=True) 
     mpesa_receipt_number = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    payment_method = models.CharField(max_length=50) # 'M-Pesa', 'Stripe'
+    payment_method = models.CharField(max_length=50)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
-    status = models.CharField(max_length=20, default='Pending') # Pending, Completed, Failed
+    status = models.CharField(max_length=20, default='Pending') 
     raw_callback_data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -184,4 +253,19 @@ class ContactMessage(models.Model):
     def __str__(self):
         return f"{self.subject} from {self.name}"
 
+class Offer(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Discount in percentage (e.g., 10 for 10%)")
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    products = models.ManyToManyField(Product, related_name='offers', blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.name} - {self.discount_percentage}%"
+
+    def is_valid(self):
+        now = timezone.now()
+        return self.is_active and self.start_date <= now <= self.end_date

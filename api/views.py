@@ -1,5 +1,5 @@
 from rest_framework import generics
-from .models import Services, Product, Order, Booking, Cart, CartItem, Payment, OrderItem, Gallery, ContactMessage
+from .models import Services, Product, Order, Booking, Cart, CartItem, Payment, OrderItem, Gallery, ContactMessage, ProductImage, ServiceImage
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
@@ -17,7 +17,10 @@ from .serializers import (
     CartSerializer,
     CartItemSerializer,
     GallerySerializer,
-    ContactMessageSerializer
+    ContactMessageSerializer,
+    ProductImageSerializer,
+    ServiceImageSerializer
+    
 )
 from django.db import transaction
 from django.shortcuts import get_object_or_404
@@ -46,11 +49,27 @@ class CustomObtainAuthToken(ObtainAuthToken):
         token, created = Token.objects.get_or_create(user=user)
         return Response({'token': token.key})
 
-class ServicesListCreateView(generics.ListAPIView):
+class ServicesCreateView(generics.ListAPIView):
     queryset = Services.objects.all()
     serializer_class = ServicesSerializer
     authentication_classes = []
     permission_classes = [AllowAny]
+
+class ProductImagesCreateView(generics.ListCreateAPIView):
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer
+
+    def get_queryset(self):
+        product_id = self.kwargs['product_id']
+        return ProductImage.objects.filter(product_id=product_id)
+
+class ServiceImagesCreateView(generics.ListCreateAPIView):
+    queryset = ServiceImage.objects.all()
+    serializer_class = ServiceImageSerializer
+
+    def get_queryset(self):
+        service_id = self.kwargs['service_id']
+        return ServiceImage.objects.filter(service_id=service_id)
 
 
 class ServicesDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -58,15 +77,15 @@ class ServicesDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ServicesSerializer
     permission_classes = [IsAdminUser]
 
-class ProductListCreateView(generics.ListAPIView):
-    queryset = Product.objects.all()
+class ProductCreateView(generics.ListAPIView):
+    queryset = Product.objects.prefetch_related('offers').all()
     serializer_class = ProductSerializer
     authentication_classes = []
     permission_classes = [AllowAny]
 
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related('offers').all()
     serializer_class = ProductSerializer
     permission_classes = [IsAdminUser]
 
@@ -669,6 +688,7 @@ AVAILABLE_TIME_SLOTS = [
     "20:00",
 ]
 #get available slots
+
 
 @api_view(['GET'])
 def get_available_slots(request):

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Services, Product, Order, Booking, Category, OrderItem, Gallery, ContactMessage
+from .models import Services, Product, Order, Booking, Category, OrderItem, Gallery, ContactMessage, ProductImage, Offer, ServiceImage
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -15,9 +15,18 @@ class GalleryAdmin(admin.ModelAdmin):
     search_fields = ('title', 'category')
 
 admin.site.register(Gallery, GalleryAdmin)
-admin.site.register(Services)
+class ServiceImageInline(admin.TabularInline):
+    model = ServiceImage
+    extra = 0
+
+class ServicesAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'created_at')
+    inlines = [ServiceImageInline]
+    search_fields = ('name',)
+
+admin.site.register(Services, ServicesAdmin)
 admin.site.register(Category)
-admin.site.register(Product)
+admin.site.register(ProductImage)
 admin.site.register(Order, OrderAdmin)
 class BookingAdmin(admin.ModelAdmin):
     list_display = ('id', 'full_name', 'services', 'booking_date', 'booking_time', 'status', 'total_price', 'created_at')
@@ -32,3 +41,23 @@ class ContactMessageAdmin(admin.ModelAdmin):
     search_fields = ('name', 'email', 'subject', 'message')
 
 admin.site.register(ContactMessage, ContactMessageAdmin)
+
+class ProductImageInline(admin.TabularInline):
+    model = ProductImage
+    extra = 0
+
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'price', 'stock_quantity', 'is_available', 'is_active')
+    inlines = [ProductImageInline]
+    list_filter = ('is_available', 'is_active', 'category')
+    search_fields = ('name', 'description')
+
+admin.site.register(Product, ProductAdmin)
+
+class OfferAdmin(admin.ModelAdmin):
+    list_display = ('name', 'discount_percentage', 'start_date', 'end_date', 'is_active')
+    filter_horizontal = ('products',)
+    list_filter = ('is_active', 'start_date', 'end_date')
+    search_fields = ('name',)
+
+admin.site.register(Offer, OfferAdmin)

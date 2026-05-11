@@ -2,8 +2,8 @@ from django.urls import path
 from django.views.decorators.csrf import csrf_exempt
 from .views import cancel_order, cancel_booking, mark_order_delivered, confirm_order
 from .views import (
-    ServicesListCreateView, ServicesDetailView,
-    ProductListCreateView, ProductDetailView,
+    ServicesDetailView,
+    ProductDetailView,
     create_order, OrderListView, OrderDetailView,
     BookingCreateView, BookingListView, BookingDetailView, create_booking,
     confirm_booking, complete_booking,
@@ -11,17 +11,17 @@ from .views import (
     CartCreateView, CartDetailView, add_to_cart, UpdateCartItemView,
     initiate_mpesa_payment, mpesa_callback, initiate_stripe_payment,
     GalleryListCreateView, GalleryDetailView, admin_dashboard_stats,
-    ContactCreateView, ContactListView, ContactDetailView, CustomObtainAuthToken
+    ContactCreateView, ContactListView, ContactDetailView, CustomObtainAuthToken,  ProductCreateView, ServicesCreateView, ProductImagesCreateView, ServiceImagesCreateView
 )
 from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
     # Services
-    path('services/', ServicesListCreateView.as_view()),
+    path('services/', ServicesCreateView.as_view()),
     path('services/<int:pk>/', ServicesDetailView.as_view()),
 
     # Products
-    path('products/', ProductListCreateView.as_view()),
+    path('products/', ProductCreateView.as_view()),
     path('products/<int:pk>/', ProductDetailView.as_view()),
 
     # Orders
@@ -69,4 +69,12 @@ urlpatterns = [
     path('contact/', ContactCreateView.as_view(), name='contact-create'),
     path('contact/messages/', ContactListView.as_view(), name='contact-list'),
     path('contact/messages/<int:pk>/', ContactDetailView.as_view(), name='contact-detail'),
+    
+    # Product Images
+    path('products/<int:product_id>/images/', ProductImagesCreateView.as_view(), name='product-images'),
+
+    # Service Images
+    path('services/<int:service_id>/images/', ServiceImagesCreateView.as_view(), name='service-images'),
+
+
 ]

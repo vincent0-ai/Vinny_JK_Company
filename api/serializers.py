@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from .models import Services, Product, Order, Booking, Category, Cart, CartItem, OrderItem, Gallery, ContactMessage
+from .models import Services, Product, Order, Booking, Category, Cart, CartItem, OrderItem, Gallery, ContactMessage, ProductImage, ServiceImage
 
 
 class GallerySerializer(serializers.ModelSerializer):
@@ -14,6 +14,12 @@ class ServicesSerializer(serializers.ModelSerializer):
         model = Services
         fields = '__all__'
 
+class ProductImageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'price', 'description', 'car_models', 'uploaded_at']
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,15 +27,27 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+
+
+
 class ProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+    discounted_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    discount_percentage = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True, required=False
     )
+
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = ['id', 'name', 'description', 'price', 'discounted_price', 'discount_percentage', 'category', 'category_id', 'images', 'created_at', 'updated_at', 'is_available', 'stock_quantity', 'is_active']
 
+    def get_discount_percentage(self, obj):
+        offer = obj.current_offer
+        if offer:
+            return offer.discount_percentage
+        return None
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
@@ -50,7 +68,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'phone_number', 'estate', 'street_address', 'is_delivered',
             'is_paid', 'is_cancelled', 'is_completed', 'is_pending',
             'is_out_for_delivery', 'is_restored', 'is_failed', 'payment_method',
-            'is_confirmed'
+            'is_confirmed', 'description'
         ]
         read_only_fields = ['total_price']
 
@@ -88,3 +106,18 @@ class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = '__all__'
+
+
+class ServiceImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceImage
+        fields = ['id', 'image', 'service_type', 'price', 'description', 'uploaded_at']
+
+class ServicesSerializer(serializers.ModelSerializer):
+    images = ServiceImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Services
+        fields = ['id', 'name', 'description', 'price', 'images', 'created_at', 'updated_at']
+
+
