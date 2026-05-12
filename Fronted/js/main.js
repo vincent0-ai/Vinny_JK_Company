@@ -260,10 +260,10 @@ function renderServiceCard(service, isPreview) {
         </div>
         <div class="card-footer-custom">
           <button class="btn btn-primary-custom w-100" onclick="openServiceDetail(${service.id})">
-            <span class="material-icons" style="font-size:1.1rem;vertical-align:middle;margin-right:4px;">visibility</span> View Details
+            View Details
           </button>
+          </div>
         </div>
-      </div>
     </div>
   `;
 }
@@ -301,8 +301,14 @@ function renderProductCard(product, isPreview) {
     : `<div class="card-price">${formatPrice(product.price)}</div>`;
 
   // Category tag
-  const categoryTag = product.category
-    ? `<span class="category-tag">${product.category}</span>`
+  let catVal = product.category;
+  if (catVal === '1') catVal = 'Spare parts';
+  if (catVal === '2') catVal = 'Electrical';
+  if (catVal === '3') catVal = 'Service parts';
+  if (catVal === '4') catVal = 'Lubricants';
+
+  const categoryTag = (catVal && !/^\d+$/.test(catVal))
+    ? `<span class="category-tag">${catVal.toUpperCase()}</span>`
     : '';
 
   const safeName = (product.name || '').replace(/'/g, "\\'");
@@ -332,7 +338,7 @@ function renderProductCard(product, isPreview) {
         </div>
         <div class="card-footer-custom d-flex gap-2">
           <button class="btn btn-primary-custom flex-grow-1" onclick="openProductDetail(${product.id})">
-            <span class="material-icons" style="font-size:1.1rem;vertical-align:middle;margin-right:4px;">visibility</span> View Details
+            View Details
           </button>
           ${quickAddBtn}
         </div>
@@ -488,6 +494,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filterSelect = document.getElementById('productFilter');
     if (searchInput) searchInput.addEventListener('input', filterAndRenderProducts);
     if (filterSelect) filterSelect.addEventListener('change', filterAndRenderProducts);
+
+    // Auto-open product detail if param is present
+    if (urlParams.get('product') && document.getElementById('productDetailModal')) {
+      const pId = parseInt(urlParams.get('product'), 10);
+      setTimeout(() => openProductDetail(pId), 100);
+    }
   }
 
   // Load Services
@@ -514,6 +526,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       if (noServices) noServices.classList.remove('d-none');
       if (servicesPreview) servicesPreview.innerHTML = '<p class="text-center opacity-50">Our services are being updated. Check back soon!</p>';
+    }
+
+    // Auto-open service detail if param is present
+    if (urlParams.get('service') && document.getElementById('serviceDetailModal')) {
+      const sId = parseInt(urlParams.get('service'), 10);
+      setTimeout(() => openServiceDetail(sId), 100);
     }
   }
 
@@ -626,7 +644,7 @@ window.openProductDetail = function(productId) {
   if (!product) return;
 
   let modalEl = document.getElementById('productDetailModal');
-  if (!modalEl) { window.location.href = 'products.html'; return; }
+  if (!modalEl) { window.location.href = `products.html?product=${productId}`; return; }
 
   // Populate carousel
   const carouselInner = document.getElementById('productCarouselInner');
@@ -647,8 +665,14 @@ window.openProductDetail = function(productId) {
     <button type="button" data-bs-target="#productDetailCarousel" data-bs-slide-to="${i}" ${i === 0 ? 'class="active"' : ''} aria-label="Slide ${i+1}"></button>
   `).join('') : '';
 
+  let pCat = product.category;
+  if (pCat === '1') pCat = 'Spare parts';
+  if (pCat === '2') pCat = 'Electrical';
+  if (pCat === '3') pCat = 'Service parts';
+  if (pCat === '4') pCat = 'Lubricants';
+
   document.getElementById('productDetailName').textContent = product.name || 'Product';
-  document.getElementById('productDetailCategory').innerHTML = product.category ? `<span class="category-tag">${product.category}</span>` : '';
+  document.getElementById('productDetailCategory').innerHTML = (pCat && !/^\d+$/.test(pCat)) ? `<span class="category-tag">${pCat.toUpperCase()}</span>` : '';
   document.getElementById('productDetailDescription').textContent = product.description || '';
 
   // Price with discount
@@ -684,7 +708,7 @@ window.openServiceDetail = function(serviceId) {
   if (!service) return;
 
   let modalEl = document.getElementById('serviceDetailModal');
-  if (!modalEl) { window.location.href = 'services.html'; return; }
+  if (!modalEl) { window.location.href = `services.html?service=${serviceId}`; return; }
 
   const carouselInner = document.getElementById('serviceCarouselInner');
   const indicators = document.getElementById('serviceCarouselIndicators');
