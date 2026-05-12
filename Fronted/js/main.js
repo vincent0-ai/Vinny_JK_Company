@@ -340,7 +340,6 @@ function renderProductCard(product, isPreview) {
     </div>
   `;
 }
-}
 
 async function fetchGallery() {
   try {
