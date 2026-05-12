@@ -89,6 +89,45 @@
     </div>
   </section>
 
+  <!-- ============ SERVICE DETAIL MODAL ============ -->
+  <div class="modal fade detail-modal" id="serviceDetailModal" tabindex="-1" aria-labelledby="serviceDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title" id="serviceDetailModalLabel">Service Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Image Carousel -->
+          <div id="serviceDetailCarousel" class="carousel slide detail-carousel" data-bs-ride="false">
+            <div class="carousel-indicators" id="serviceCarouselIndicators"></div>
+            <div class="carousel-inner" id="serviceCarouselInner"></div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#serviceDetailCarousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#serviceDetailCarousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+          <!-- Service Info -->
+          <div class="detail-info">
+            <h4 id="serviceDetailName"></h4>
+            <div class="detail-price-section" id="serviceDetailPrice"></div>
+            <div class="detail-description" id="serviceDetailDescription"></div>
+            <!-- Transformation Images Grid -->
+            <div id="serviceImagesGrid"></div>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-primary-custom flex-grow-1" id="serviceDetailBook">
+            <span class="material-icons" style="font-size:1.2rem;vertical-align:middle;margin-right:4px;">event</span> Book This Service
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ HOW IT WORKS ============ -->
   <section class="section-padding bg-light-custom">
     <div class="container">

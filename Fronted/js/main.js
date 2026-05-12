@@ -240,9 +240,15 @@ const CartManager = {
 };
 
 // ---- Render Functions ----
+// Cache for fetched data
+let allProducts = [];
+let allServices = [];
+
 function renderServiceCard(service, isPreview) {
-  const imgUrl = getImageUrl(service.image);
-  const desc = isPreview ? truncateText(service.description, 100) : service.description;
+  // Use first image from images array if available, else fall back to service.image
+  const firstImage = (service.images && service.images.length > 0) ? service.images[0].image : service.image;
+  const imgUrl = getImageUrl(firstImage);
+  const desc = truncateText(service.description, 100);
   return `
     <div class="col-md-6 col-lg-4">
       <div class="card-custom">
@@ -253,10 +259,9 @@ function renderServiceCard(service, isPreview) {
           <div class="card-price">${formatPrice(service.price)}</div>
         </div>
         <div class="card-footer-custom">
-          <a href="services.html#booking" class="btn btn-primary-custom w-100"
-             onclick="window.selectServiceForBooking('${service.id}', '${service.price}')">
-            Book Now
-          </a>
+          <button class="btn btn-primary-custom w-100" onclick="openServiceDetail(${service.id})">
+            <span class="material-icons" style="font-size:1.1rem;vertical-align:middle;margin-right:4px;">visibility</span> View Details
+          </button>
         </div>
       </div>
     </div>
@@ -276,37 +281,65 @@ window.selectServiceForBooking = function (serviceId, servicePrice) {
     }
   }
 };
-
 function renderProductCard(product, isPreview) {
-  const imgUrl = getImageUrl(product.image);
-  const desc = isPreview ? truncateText(product.description, 80) : truncateText(product.description, 120);
+  const firstImage = (product.images && product.images.length > 0) ? product.images[0].image : product.image;
+  const imgUrl = getImageUrl(firstImage);
+  const desc = truncateText(product.description, isPreview ? 80 : 120);
   const inStock = product.is_available && product.stock_quantity > 0;
-  const stockText = inStock ? `In Stock (${product.stock_quantity})` : 'Out of Stock';
+  const stockText = inStock ? `${product.stock_quantity} in stock` : 'Out of Stock';
   const stockClass = inStock ? 'in-stock' : 'out-of-stock';
 
-  const buttonHtml = inStock
-    ? `<button class="btn btn-primary-custom w-100 d-flex align-items-center justify-content-center gap-2" 
-               onclick="CartManager.add({id: ${product.id}, name: '${product.name.replace(/'/g, "\\'")}', price: ${product.price}, image: '${product.image}', stock: ${product.stock_quantity}}, this)">
-          <span class="material-icons" style="font-size: 1.2rem;">add_shopping_cart</span> Add to Cart
+  // Discount handling
+  const hasDiscount = product.discount_percentage && parseFloat(product.discount_percentage) > 0;
+  const discountBadge = hasDiscount
+    ? `<span class="discount-badge">${Math.round(product.discount_percentage)}% OFF</span>`
+    : '';
+
+  const priceHtml = hasDiscount
+    ? `<span class="price-original">${formatPrice(product.price)}</span>
+       <span class="price-discounted">${formatPrice(product.discounted_price)}</span>`
+    : `<div class="card-price">${formatPrice(product.price)}</div>`;
+
+  // Category tag
+  const categoryTag = product.category
+    ? `<span class="category-tag">${product.category}</span>`
+    : '';
+
+  const safeName = (product.name || '').replace(/'/g, "\\'");
+  const effectivePrice = hasDiscount ? product.discounted_price : product.price;
+
+  const quickAddBtn = inStock
+    ? `<button class="btn btn-outline-custom btn-sm d-flex align-items-center justify-content-center gap-1"
+               onclick="event.stopPropagation(); CartManager.add({id: ${product.id}, name: '${safeName}', price: ${effectivePrice}, image: '${firstImage}', stock: ${product.stock_quantity}}, this)"
+               title="Quick Add to Cart">
+         <span class="material-icons" style="font-size:1rem;">add_shopping_cart</span>
        </button>`
-    : `<button class="btn btn-dark-custom w-100" disabled>Out of Stock</button>`;
+    : '';
 
   return `
     <div class="${isPreview ? 'col-sm-6 col-lg-4' : 'col-sm-6 col-lg-4 col-xl-3'}">
       <div class="card-custom">
-        <img src="${imgUrl}" class="card-img-top" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x250?text=Product'">
+        <div class="card-img-container">
+          ${discountBadge}
+          <span class="card-stock-badge ${stockClass}">${stockText}</span>
+          <img src="${imgUrl}" class="card-img-top" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x250?text=Product'">
+        </div>
         <div class="card-body">
+          ${categoryTag}
           <h5 class="card-title">${product.name}</h5>
           <p class="card-text">${desc}</p>
-          <div class="card-price">${formatPrice(product.price)}</div>
-          <span class="card-stock ${stockClass}">${stockText}</span>
+          <div class="d-flex align-items-center gap-2">${priceHtml}</div>
         </div>
-        <div class="card-footer-custom">
-          ${buttonHtml}
+        <div class="card-footer-custom d-flex gap-2">
+          <button class="btn btn-primary-custom flex-grow-1" onclick="openProductDetail(${product.id})">
+            <span class="material-icons" style="font-size:1.1rem;vertical-align:middle;margin-right:4px;">visibility</span> View Details
+          </button>
+          ${quickAddBtn}
         </div>
       </div>
     </div>
   `;
+}
 }
 
 async function fetchGallery() {
@@ -438,6 +471,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (productsPreview) productsPreview.innerHTML = '';
 
     if (products && products.length > 0) {
+      allProducts = products;
       if (productsContainer) {
         productsContainer.innerHTML = products.map(p => renderProductCard(p, false)).join('');
       }
@@ -446,11 +480,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       if (noProducts) noProducts.classList.add('d-none');
     } else {
-      // Show empty state if on products page
       if (noProducts) noProducts.classList.remove('d-none');
-      // On index page, maybe show a simple message in preview
       if (productsPreview) productsPreview.innerHTML = '<p class="text-center opacity-50">New products coming soon!</p>';
     }
+
+    // Wire up search and filter
+    const searchInput = document.getElementById('productSearch');
+    const filterSelect = document.getElementById('productFilter');
+    if (searchInput) searchInput.addEventListener('input', filterAndRenderProducts);
+    if (filterSelect) filterSelect.addEventListener('change', filterAndRenderProducts);
   }
 
   // Load Services
@@ -466,6 +504,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (servicesPreview) servicesPreview.innerHTML = '';
 
     if (services && services.length > 0) {
+      allServices = services;
       if (servicesContainer) {
         servicesContainer.innerHTML = services.map(s => renderServiceCard(s, false)).join('');
       }
@@ -547,6 +586,153 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// ---- Product Search & Filter ----
+function filterAndRenderProducts() {
+  const container = document.getElementById('productsContainer');
+  const noProducts = document.getElementById('noProductsFound');
+  if (!container) return;
+
+  const searchTerm = (document.getElementById('productSearch')?.value || '').toLowerCase().trim();
+  const filterValue = document.getElementById('productFilter')?.value || 'all';
+
+  let filtered = allProducts;
+
+  // Category filter
+  if (filterValue === 'in-stock') {
+    filtered = filtered.filter(p => p.is_available && p.stock_quantity > 0);
+  } else if (filterValue !== 'all') {
+    filtered = filtered.filter(p => p.category === filterValue);
+  }
+
+  // Text search (name + description)
+  if (searchTerm) {
+    filtered = filtered.filter(p =>
+      (p.name || '').toLowerCase().includes(searchTerm) ||
+      (p.description || '').toLowerCase().includes(searchTerm)
+    );
+  }
+
+  if (filtered.length > 0) {
+    container.innerHTML = filtered.map(p => renderProductCard(p, false)).join('');
+    if (noProducts) noProducts.classList.add('d-none');
+  } else {
+    container.innerHTML = '';
+    if (noProducts) noProducts.classList.remove('d-none');
+  }
+}
+
+// ---- Product Detail Modal ----
+window.openProductDetail = function(productId) {
+  const product = allProducts.find(p => p.id === productId);
+  if (!product) return;
+
+  let modalEl = document.getElementById('productDetailModal');
+  if (!modalEl) { window.location.href = 'products.html'; return; }
+
+  // Populate carousel
+  const carouselInner = document.getElementById('productCarouselInner');
+  const indicators = document.getElementById('productCarouselIndicators');
+  const allImages = [];
+  if (product.image) allImages.push({ url: product.image });
+  if (product.images && product.images.length > 0) {
+    product.images.forEach(img => allImages.push({ url: img.image, car_models: img.car_models }));
+  }
+  if (allImages.length === 0) allImages.push({ url: null });
+
+  carouselInner.innerHTML = allImages.map((img, i) => `
+    <div class="carousel-item ${i === 0 ? 'active' : ''}">
+      <img src="${getImageUrl(img.url)}" class="d-block w-100" alt="${product.name}" onerror="this.src='https://via.placeholder.com/800x400?text=Product'">
+    </div>
+  `).join('');
+  indicators.innerHTML = allImages.length > 1 ? allImages.map((_, i) => `
+    <button type="button" data-bs-target="#productDetailCarousel" data-bs-slide-to="${i}" ${i === 0 ? 'class="active"' : ''} aria-label="Slide ${i+1}"></button>
+  `).join('') : '';
+
+  document.getElementById('productDetailName').textContent = product.name || 'Product';
+  document.getElementById('productDetailCategory').innerHTML = product.category ? `<span class="category-tag">${product.category}</span>` : '';
+  document.getElementById('productDetailDescription').textContent = product.description || '';
+
+  // Price with discount
+  const hasDiscount = product.discount_percentage && parseFloat(product.discount_percentage) > 0;
+  const priceEl = document.getElementById('productDetailPrice');
+  priceEl.innerHTML = hasDiscount
+    ? `<span class="price-original">${formatPrice(product.price)}</span><span class="price-discounted">${formatPrice(product.discounted_price)}</span><span class="discount-badge" style="position:static;">${Math.round(product.discount_percentage)}% OFF</span>`
+    : `<span class="card-price mb-0">${formatPrice(product.price)}</span>`;
+
+  // Car models from sub-images
+  const metaEl = document.getElementById('productDetailMeta');
+  const carModels = new Set();
+  if (product.images) product.images.forEach(img => { if (img.car_models) img.car_models.split(',').map(m => m.trim()).filter(Boolean).forEach(m => carModels.add(m)); });
+  metaEl.innerHTML = carModels.size > 0 ? Array.from(carModels).map(m => `<span class="car-model-chip"><span class="material-icons">directions_car</span>${m}</span>`).join('') : '';
+
+  // Stock
+  const inStock = product.is_available && product.stock_quantity > 0;
+  document.getElementById('productDetailStock').innerHTML = inStock ? `<span class="card-stock in-stock">In Stock (${product.stock_quantity})</span>` : `<span class="card-stock out-of-stock">Out of Stock</span>`;
+
+  // Add to cart
+  const addCartBtn = document.getElementById('productDetailAddCart');
+  const effectivePrice = hasDiscount ? product.discounted_price : product.price;
+  const firstImage = (product.images && product.images.length > 0) ? product.images[0].image : product.image;
+  addCartBtn.disabled = !inStock;
+  addCartBtn.onclick = inStock ? function() { CartManager.add({ id: product.id, name: product.name, price: parseFloat(effectivePrice), image: firstImage, stock: product.stock_quantity }, addCartBtn); } : null;
+
+  new bootstrap.Modal(modalEl).show();
+};
+
+// ---- Service Detail Modal ----
+window.openServiceDetail = function(serviceId) {
+  const service = allServices.find(s => s.id === serviceId);
+  if (!service) return;
+
+  let modalEl = document.getElementById('serviceDetailModal');
+  if (!modalEl) { window.location.href = 'services.html'; return; }
+
+  const carouselInner = document.getElementById('serviceCarouselInner');
+  const indicators = document.getElementById('serviceCarouselIndicators');
+  const allImages = (service.images && service.images.length > 0) ? service.images : [{ image: service.image || null, image_type: 'general' }];
+
+  carouselInner.innerHTML = allImages.map((img, i) => `
+    <div class="carousel-item ${i === 0 ? 'active' : ''}" style="position:relative;">
+      <img src="${getImageUrl(img.image)}" class="d-block w-100" alt="${service.name}" onerror="this.src='https://via.placeholder.com/800x400?text=Service'">
+      ${img.image_type && img.image_type !== 'general' ? `<span class="image-type-tag ${img.image_type}">${img.image_type}</span>` : ''}
+    </div>
+  `).join('');
+  indicators.innerHTML = allImages.length > 1 ? allImages.map((_, i) => `
+    <button type="button" data-bs-target="#serviceDetailCarousel" data-bs-slide-to="${i}" ${i === 0 ? 'class="active"' : ''} aria-label="Slide ${i+1}"></button>
+  `).join('') : '';
+
+  document.getElementById('serviceDetailName').textContent = service.name || 'Service';
+  document.getElementById('serviceDetailPrice').innerHTML = `<span class="card-price mb-0">${formatPrice(service.price)}</span>`;
+
+  // Full description with markdown support
+  const descEl = document.getElementById('serviceDetailDescription');
+  if (typeof marked !== 'undefined' && service.description) { descEl.innerHTML = marked.parse(service.description); }
+  else { descEl.textContent = service.description || ''; }
+
+  // Images grid with before/after tags
+  const imagesGrid = document.getElementById('serviceImagesGrid');
+  if (service.images && service.images.length > 1) {
+    imagesGrid.innerHTML = `<h6 class="mt-3 mb-2" style="font-size:0.9rem; opacity:0.8;">Transformation Gallery</h6>
+      <div class="service-images-grid">${service.images.map((img, i) => `
+        <div class="service-image-thumb" onclick="document.querySelector('[data-bs-target=&quot;#serviceDetailCarousel&quot;][data-bs-slide-to=&quot;${i}&quot;]')?.click()">
+          <img src="${getImageUrl(img.image)}" alt="${img.service_type || 'Image'}" onerror="this.src='https://via.placeholder.com/200x120?text=Image'">
+          ${img.image_type ? `<span class="image-type-tag ${img.image_type}">${img.image_type}</span>` : ''}
+        </div>`).join('')}
+      </div>`;
+  } else { imagesGrid.innerHTML = ''; }
+
+  // Book button
+  document.getElementById('serviceDetailBook').onclick = function() {
+    bootstrap.Modal.getInstance(modalEl)?.hide();
+    window.selectServiceForBooking(service.id, service.price);
+    const bookingSection = document.getElementById('booking');
+    if (bookingSection) { setTimeout(() => bookingSection.scrollIntoView({ behavior: 'smooth' }), 300); }
+    else { window.location.href = 'services.html#booking'; }
+  };
+
+  new bootstrap.Modal(modalEl).show();
+};
+
 // ---- Checkout Modal logic ----
 let selectedPaymentMethod = null;
 
@@ -617,6 +803,9 @@ document.addEventListener('click', async function (e) {
       phone_number: document.getElementById('orderPhone').value,
       estate: document.getElementById('orderEstate').value,
       street_address: document.getElementById('orderStreet').value,
+      vehicle_make: document.getElementById('orderVehicleMake') ? document.getElementById('orderVehicleMake').value : '',
+      vehicle_model: document.getElementById('orderVehicleModel') ? document.getElementById('orderVehicleModel').value : '',
+      vehicle_year: document.getElementById('orderVehicleYear') ? document.getElementById('orderVehicleYear').value : '',
       auto_part: `Cart Order (Multi-item)`,
       payment_method: selectedPaymentMethod === 'online' ? 'M-Pesa' : 'Delivery'
     };

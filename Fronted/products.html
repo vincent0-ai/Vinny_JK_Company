@@ -115,11 +115,15 @@
       <!-- Search / Filter Bar -->
       <div class="filter-bar d-flex flex-wrap align-items-center gap-3">
         <div class="flex-grow-1">
-          <input type="text" class="form-control" id="productSearch" placeholder="Search products...">
+          <input type="text" class="form-control" id="productSearch" placeholder="Search products by name or description...">
         </div>
         <div>
           <select class="form-select" id="productFilter">
-            <option value="all">All Products</option>
+            <option value="all">All Categories</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Spare parts">Spare parts</option>
+            <option value="Service parts">Service parts</option>
+            <option value="Lubricants">Lubricants</option>
             <option value="in-stock">In Stock Only</option>
           </select>
         </div>
@@ -142,6 +146,46 @@
       </div>
     </div>
   </section>
+
+  <!-- ============ PRODUCT DETAIL MODAL ============ -->
+  <div class="modal fade detail-modal" id="productDetailModal" tabindex="-1" aria-labelledby="productDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title" id="productDetailModalLabel">Product Details</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Image Carousel -->
+          <div id="productDetailCarousel" class="carousel slide detail-carousel" data-bs-ride="false">
+            <div class="carousel-indicators" id="productCarouselIndicators"></div>
+            <div class="carousel-inner" id="productCarouselInner"></div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#productDetailCarousel" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#productDetailCarousel" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+          <!-- Product Info -->
+          <div class="detail-info">
+            <div id="productDetailCategory"></div>
+            <h4 id="productDetailName"></h4>
+            <div class="detail-price-section" id="productDetailPrice"></div>
+            <div class="detail-description" id="productDetailDescription"></div>
+            <div class="detail-meta" id="productDetailMeta"></div>
+            <div id="productDetailStock"></div>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-primary-custom flex-grow-1" id="productDetailAddCart">
+            <span class="material-icons" style="font-size:1.2rem;vertical-align:middle;margin-right:4px;">add_shopping_cart</span> Add to Cart
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ============ CHECKOUT MODAL ============ -->
   <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
@@ -225,6 +269,25 @@
                     <label for="orderStreet" class="form-label-sm">Street / House No.</label>
                     <input type="text" class="form-control form-control-sm" id="orderStreet"
                       placeholder="e.g. 123 Main St" required>
+                  </div>
+                </div>
+
+                <h6 class="mb-3 d-flex align-items-center gap-2 mt-4">
+                  <span class="material-icons" style="font-size: 1.1rem;">directions_car</span>
+                  Vehicle Details <small class="opacity-50">(optional)</small>
+                </h6>
+                <div class="checkout-grid mb-3">
+                  <div>
+                    <label for="orderVehicleMake" class="form-label-sm">Vehicle Make</label>
+                    <input type="text" class="form-control form-control-sm" id="orderVehicleMake" placeholder="e.g. Toyota">
+                  </div>
+                  <div>
+                    <label for="orderVehicleModel" class="form-label-sm">Vehicle Model</label>
+                    <input type="text" class="form-control form-control-sm" id="orderVehicleModel" placeholder="e.g. Corolla">
+                  </div>
+                  <div>
+                    <label for="orderVehicleYear" class="form-label-sm">Vehicle Year</label>
+                    <input type="text" class="form-control form-control-sm" id="orderVehicleYear" placeholder="e.g. 2020">
                   </div>
                 </div>
 

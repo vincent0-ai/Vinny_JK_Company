@@ -29,7 +29,14 @@ class ServiceImage(models.Model):
         on_delete=models.CASCADE
     )
 
+    IMAGE_TYPE_CHOICES = [
+        ('before', 'Before'),
+        ('after', 'After'),
+        ('general', 'General'),
+    ]
+
     image = models.ImageField(upload_to='services/')
+    image_type = models.CharField(max_length=10, choices=IMAGE_TYPE_CHOICES, default='general')
     service_type = models.CharField(max_length=255, blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     description = models.TextField(blank=True, null=True)

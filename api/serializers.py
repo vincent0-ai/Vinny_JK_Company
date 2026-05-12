@@ -34,14 +34,10 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     discounted_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     discount_percentage = serializers.SerializerMethodField()
-    category = CategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), source='category', write_only=True, required=False
-    )
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'discounted_price', 'discount_percentage', 'category', 'category_id', 'images', 'created_at', 'updated_at', 'is_available', 'stock_quantity', 'is_active']
+        fields = ['id', 'name', 'description', 'price', 'image', 'discounted_price', 'discount_percentage', 'category', 'images', 'created_at', 'updated_at', 'is_available', 'stock_quantity', 'is_active']
 
     def get_discount_percentage(self, obj):
         offer = obj.current_offer
@@ -111,7 +107,7 @@ class ContactMessageSerializer(serializers.ModelSerializer):
 class ServiceImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceImage
-        fields = ['id', 'image', 'service_type', 'price', 'description', 'uploaded_at']
+        fields = ['id', 'image', 'image_type', 'service_type', 'price', 'description', 'uploaded_at']
 
 class ServicesSerializer(serializers.ModelSerializer):
     images = ServiceImageSerializer(many=True, read_only=True)
