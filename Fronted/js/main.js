@@ -300,16 +300,8 @@ function renderProductCard(product, isPreview) {
        <span class="price-discounted">${formatPrice(product.discounted_price)}</span>`
     : `<div class="card-price">${formatPrice(product.price)}</div>`;
 
-  // Category tag
-  let catVal = product.category;
-  if (catVal === '1') catVal = 'Spare parts';
-  if (catVal === '2') catVal = 'Electrical';
-  if (catVal === '3') catVal = 'Service parts';
-  if (catVal === '4') catVal = 'Lubricants';
-
-  const categoryTag = (catVal && !/^\d+$/.test(catVal))
-    ? `<span class="category-tag">${catVal.toUpperCase()}</span>`
-    : '';
+  // Category tag removed as per request
+  const categoryTag = '';
 
   const safeName = (product.name || '').replace(/'/g, "\\'");
   const effectivePrice = hasDiscount ? product.discounted_price : product.price;
@@ -478,7 +470,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (products && products.length > 0) {
       allProducts = products;
       if (productsContainer) {
-        productsContainer.innerHTML = products.map(p => renderProductCard(p, false)).join('');
+        filterAndRenderProducts();
       }
       if (productsPreview) {
         productsPreview.innerHTML = products.filter(p => p.is_available).slice(0, 3).map(p => renderProductCard(p, true)).join('');
@@ -618,7 +610,13 @@ function filterAndRenderProducts() {
   if (filterValue === 'in-stock') {
     filtered = filtered.filter(p => p.is_available && p.stock_quantity > 0);
   } else if (filterValue !== 'all') {
-    filtered = filtered.filter(p => p.category === filterValue);
+    // Normalizing DB values logic since backend might be returning numbers as strings.
+    let catFilter = filterValue;
+    if (filterValue === 'Spare parts') catFilter = '1';
+    else if (filterValue === 'Electrical') catFilter = '2';
+    else if (filterValue === 'Service parts') catFilter = '3';
+    else if (filterValue === 'Lubricants') catFilter = '4';
+    filtered = filtered.filter(p => p.category === filterValue || p.category === catFilter);
   }
 
   // Text search (name + description)
@@ -630,7 +628,29 @@ function filterAndRenderProducts() {
   }
 
   if (filtered.length > 0) {
-    container.innerHTML = filtered.map(p => renderProductCard(p, false)).join('');
+    // Group products by their normalized category string
+    const grouped = {};
+    filtered.forEach(p => {
+      let cName = p.category;
+      if (cName === '1') cName = 'Spare parts';
+      else if (cName === '2') cName = 'Electrical';
+      else if (cName === '3') cName = 'Service parts';
+      else if (cName === '4') cName = 'Lubricants';
+      else if (!cName || /^\d+$/.test(cName)) cName = 'Other';
+      
+      if (!grouped[cName]) grouped[cName] = [];
+      grouped[cName].push(p);
+    });
+
+    let html = '';
+    // Sort categories, maybe 'Other' at the end
+    const categories = Object.keys(grouped).sort();
+    categories.forEach(cat => {
+      html += `<div class="col-12 mt-4 mb-2"><h3 class="border-bottom pb-2" style="color: #e8a825;">${cat}</h3></div>`;
+      html += grouped[cat].map(p => renderProductCard(p, false)).join('');
+    });
+
+    container.innerHTML = html;
     if (noProducts) noProducts.classList.add('d-none');
   } else {
     container.innerHTML = '';
@@ -775,9 +795,11 @@ function openCheckoutModal() {
     `).join('');
   }
   document.getElementById('checkoutTotalDisplay').textContent = formatPrice(CartManager.getTotal());
-  selectedPaymentMethod = null;
-  document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
   if (document.getElementById('stkPrompt')) document.getElementById('stkPrompt').classList.add('d-none');
+  
+  // Default to delivery since M-Pesa is disabled
+  selectPayment('delivery');
+  
   new bootstrap.Modal(modalEl).show();
 }
 

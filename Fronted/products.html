@@ -297,13 +297,13 @@
                 </h6>
                 <div class="row g-2 mb-4">
                   <div class="col-6">
-                    <div class="payment-option p-2" id="payOnlineOption" onclick="selectPayment('online')">
-                      <input type="radio" name="paymentMethod" id="payOnline" value="online" class="d-none">
+                    <div class="payment-option p-2" id="payOnlineOption" style="opacity: 0.5; pointer-events: none; cursor: not-allowed;">
+                      <input type="radio" name="paymentMethod" id="payOnline" value="online" class="d-none" disabled>
                       <div class="d-flex align-items-center gap-2">
                         <span class="material-icons" style="font-size:1.2rem;">payment</span>
                         <div style="line-height:1.2">
                           <div class="fw-bold" style="font-size:0.85rem;">M-Pesa STK</div>
-                          <small style="font-size:0.7rem; opacity:0.6;">Pay Now</small>
+                          <small style="font-size:0.7rem; opacity:0.6;">Currently unavailable</small>
                         </div>
                       </div>
                     </div>
