@@ -250,10 +250,14 @@ function initializeAutoCarousels() {
   carousels.forEach(carousel => {
     // If it's already initialized by Bootstrap, this does nothing destructive
     if (window.bootstrap && bootstrap.Carousel) {
-      new bootstrap.Carousel(carousel, {
-        interval: 3000,
-        ride: 'carousel'
-      });
+      let bsCarousel = bootstrap.Carousel.getInstance(carousel);
+      if (!bsCarousel) {
+        bsCarousel = new bootstrap.Carousel(carousel, {
+          interval: 3000,
+          ride: 'carousel'
+        });
+      }
+      bsCarousel.cycle();
     }
   });
 }
@@ -556,8 +560,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pId = parseInt(urlParams.get('product'), 10);
       setTimeout(() => openProductDetail(pId), 100);
     }
+  } // Added missing brace here
       
-      initializeAutoCarousels();
+  initializeAutoCarousels();
+
+  const servicesContainer = document.getElementById('servicesContainer');
+  const servicesPreview = document.getElementById('servicesPreviewContainer');
   const noServices = document.getElementById('noServicesFound');
 
   if (servicesContainer || servicesPreview) {
