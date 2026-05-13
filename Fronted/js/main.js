@@ -253,7 +253,7 @@ function initializeAutoCarousels() {
       let bsCarousel = bootstrap.Carousel.getInstance(carousel);
       if (!bsCarousel) {
         bsCarousel = new bootstrap.Carousel(carousel, {
-          interval: 3000,
+          interval: 5000,
           ride: 'carousel'
         });
       }
@@ -298,7 +298,7 @@ function generateImageSliderHTML(item, type) {
   }).join('');
 
   return `
-    <div id="${carouselId}" class="carousel slide slide-fade auto-start-carousel" data-bs-ride="carousel" data-bs-interval="3000" onclick="event.stopPropagation();">
+    <div id="${carouselId}" class="carousel slide carousel-fade auto-start-carousel" data-bs-ride="carousel" data-bs-interval="5000" onclick="event.stopPropagation();">
       <div class="carousel-inner">
         ${itemsHtml}
       </div>
