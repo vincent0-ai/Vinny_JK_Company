@@ -245,6 +245,19 @@ let allProducts = [];
 let allServices = [];
 
 // ---- Global Helper for Slides/BeforeAfter ----
+function initializeAutoCarousels() {
+  const carousels = document.querySelectorAll('.auto-start-carousel');
+  carousels.forEach(carousel => {
+    // If it's already initialized by Bootstrap, this does nothing destructive
+    if (window.bootstrap && bootstrap.Carousel) {
+      new bootstrap.Carousel(carousel, {
+        interval: 3000,
+        ride: 'carousel'
+      });
+    }
+  });
+}
+
 function generateImageSliderHTML(item, type) {
   const images = item.images || [];
   let allImages = [];
@@ -258,18 +271,30 @@ function generateImageSliderHTML(item, type) {
 
   if (allImages.length === 1) {
     const imgUrl = getImageUrl(allImages[0].image);
-    return `<img src="${imgUrl}" class="card-img-top" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">`;
+    let badgeHtml = '';
+    if (!!allImages[0].image_type && ['before', 'after'].includes(allImages[0].image_type.toLowerCase())) {
+         badgeHtml = `<span class="badge bg-warning text-dark position-absolute m-2" style="top:0; left:0; z-index:5; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">${allImages[0].image_type}</span>`;
+    }
+    return `<div style="position:relative;">${badgeHtml}<img src="${imgUrl}" class="card-img-top" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'"></div>`;
   }
 
   const carouselId = `carousel-${type}-${item.id}`;
-  const itemsHtml = allImages.map((img, index) => `
-    <div class="carousel-item ${index === 0 ? 'active' : ''}">
-      <img src="${getImageUrl(img.image)}" class="d-block w-100 card-img-top" alt="${item.name}" style="height: 220px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">
-    </div>
-  `).join('');
+  const itemsHtml = allImages.map((img, index) => {
+    let badgeHtml = '';
+    let iType = img.image_type ? img.image_type.toLowerCase() : '';
+    if (iType === 'before' || iType === 'after') {
+      badgeHtml = `<span class="badge bg-warning text-dark position-absolute m-2" style="top:0; left:0; z-index:5; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">${img.image_type}</span>`;
+    }
+    return `
+      <div class="carousel-item ${index === 0 ? 'active' : ''}">
+        ${badgeHtml}
+        <img src="${getImageUrl(img.image)}" class="d-block w-100 card-img-top" alt="${item.name}" style="height: 220px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">
+      </div>
+    `;
+  }).join('');
 
   return `
-    <div id="${carouselId}" class="carousel slide slide-fade" data-bs-ride="carousel" data-bs-interval="3000" onclick="event.stopPropagation();">
+    <div id="${carouselId}" class="carousel slide slide-fade auto-start-carousel" data-bs-ride="carousel" data-bs-interval="3000" onclick="event.stopPropagation();">
       <div class="carousel-inner">
         ${itemsHtml}
       </div>
@@ -531,11 +556,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pId = parseInt(urlParams.get('product'), 10);
       setTimeout(() => openProductDetail(pId), 100);
     }
-  }
-
-  // Load Services
-  const servicesContainer = document.getElementById('servicesContainer');
-  const servicesPreview = document.getElementById('servicesPreviewContainer');
+      
+      initializeAutoCarousels();
   const noServices = document.getElementById('noServicesFound');
 
   if (servicesContainer || servicesPreview) {
@@ -564,11 +586,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const sId = parseInt(urlParams.get('service'), 10);
       setTimeout(() => openServiceDetail(sId), 100);
     }
-  }
-
-  // Booking logic
-  const bookingForm = document.getElementById('bookingForm');
-  if (bookingForm) {
+      
+      // Init any rendered carousels explicitly because they were added dynamically
+      initializeAutoCarousels();
     const bookingDateInput = document.getElementById('bookingDate');
     if (bookingDateInput) {
       // Set minimum date to today to prevent past bookings
@@ -691,6 +711,9 @@ function filterAndRenderProducts() {
 
     container.innerHTML = html;
     if (noProducts) noProducts.classList.add('d-none');
+    
+    // Initialize carousels after injecting new DOM nodes
+    initializeAutoCarousels();
   } else {
     container.innerHTML = '';
     if (noProducts) noProducts.classList.remove('d-none');
