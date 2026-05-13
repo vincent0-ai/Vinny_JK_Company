@@ -1956,3 +1956,20 @@ html {
     height: 180px;
   }
 }
+
+/* Carousel fade transition */
+.carousel.slide-fade .carousel-item {
+  transition: opacity 0.8s ease-in-out;
+  opacity: 0;
+}
+.carousel.slide-fade .carousel-item.active,
+.carousel.slide-fade .carousel-item-next.carousel-item-left,
+.carousel.slide-fade .carousel-item-prev.carousel-item-right {
+  opacity: 1;
+}
+.carousel.slide-fade .carousel-item-next,
+.carousel.slide-fade .carousel-item-prev,
+.carousel.slide-fade .carousel-item.active.carousel-item-left,
+.carousel.slide-fade .carousel-item.active.carousel-item-right {
+  transform: translateX(0);
+}

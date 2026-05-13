@@ -256,23 +256,6 @@ function generateImageSliderHTML(item, type) {
     allImages = [{ image: 'https://via.placeholder.com/400x250?text=' + (type === 'service' ? 'Service' : 'Product'), image_type: 'general' }];
   }
 
-  const beforeImg = allImages.find(img => img.image_type === 'before');
-  const afterImg = allImages.find(img => img.image_type === 'after');
-
-  if (beforeImg && afterImg) {
-    const beforeUrl = getImageUrl(beforeImg.image);
-    const afterUrl = getImageUrl(afterImg.image);
-    return `
-      <div class="ba-slider-container" style="--slider-pos: 50%;" onclick="event.stopPropagation();">
-        <img src="${afterUrl}" class="ba-img ba-after" alt="${item.name} After" onerror="this.src='https://via.placeholder.com/400x250?text=Error'">
-        <img src="${beforeUrl}" class="ba-img ba-before" alt="${item.name} Before" onerror="this.src='https://via.placeholder.com/400x250?text=Error'">
-        <input type="range" min="0" max="100" value="50" class="ba-slider" oninput="this.parentElement.style.setProperty('--slider-pos', this.value + '%')">
-        <div class="ba-slider-line"></div>
-        <div class="ba-slider-handle"><span class="material-icons">swap_horiz</span></div>
-      </div>
-    `;
-  }
-
   if (allImages.length === 1) {
     const imgUrl = getImageUrl(allImages[0].image);
     return `<img src="${imgUrl}" class="card-img-top" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">`;
@@ -281,12 +264,12 @@ function generateImageSliderHTML(item, type) {
   const carouselId = `carousel-${type}-${item.id}`;
   const itemsHtml = allImages.map((img, index) => `
     <div class="carousel-item ${index === 0 ? 'active' : ''}">
-      <img src="${getImageUrl(img.image)}" class="d-block w-100 card-img-top" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">
+      <img src="${getImageUrl(img.image)}" class="d-block w-100 card-img-top" alt="${item.name}" style="height: 220px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">
     </div>
   `).join('');
 
   return `
-    <div id="${carouselId}" class="carousel slide" data-bs-ride="carousel" onclick="event.stopPropagation();">
+    <div id="${carouselId}" class="carousel slide slide-fade" data-bs-ride="carousel" data-bs-interval="3000" onclick="event.stopPropagation();">
       <div class="carousel-inner">
         ${itemsHtml}
       </div>
