@@ -244,15 +244,72 @@ const CartManager = {
 let allProducts = [];
 let allServices = [];
 
+// ---- Global Helper for Slides/BeforeAfter ----
+function generateImageSliderHTML(item, type) {
+  const images = item.images || [];
+  let allImages = [];
+  if (images.length > 0) {
+    allImages = images;
+  } else if (item.image) {
+    allImages = [{ image: item.image, image_type: 'general' }];
+  } else {
+    allImages = [{ image: 'https://via.placeholder.com/400x250?text=' + (type === 'service' ? 'Service' : 'Product'), image_type: 'general' }];
+  }
+
+  const beforeImg = allImages.find(img => img.image_type === 'before');
+  const afterImg = allImages.find(img => img.image_type === 'after');
+
+  if (beforeImg && afterImg) {
+    const beforeUrl = getImageUrl(beforeImg.image);
+    const afterUrl = getImageUrl(afterImg.image);
+    return `
+      <div class="ba-slider-container" style="--slider-pos: 50%;" onclick="event.stopPropagation();">
+        <img src="${afterUrl}" class="ba-img ba-after" alt="${item.name} After" onerror="this.src='https://via.placeholder.com/400x250?text=Error'">
+        <img src="${beforeUrl}" class="ba-img ba-before" alt="${item.name} Before" onerror="this.src='https://via.placeholder.com/400x250?text=Error'">
+        <input type="range" min="0" max="100" value="50" class="ba-slider" oninput="this.parentElement.style.setProperty('--slider-pos', this.value + '%')">
+        <div class="ba-slider-line"></div>
+        <div class="ba-slider-handle"><span class="material-icons">swap_horiz</span></div>
+      </div>
+    `;
+  }
+
+  if (allImages.length === 1) {
+    const imgUrl = getImageUrl(allImages[0].image);
+    return `<img src="${imgUrl}" class="card-img-top" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">`;
+  }
+
+  const carouselId = `carousel-${type}-${item.id}`;
+  const itemsHtml = allImages.map((img, index) => `
+    <div class="carousel-item ${index === 0 ? 'active' : ''}">
+      <img src="${getImageUrl(img.image)}" class="d-block w-100 card-img-top" alt="${item.name}" onerror="this.src='https://via.placeholder.com/400x250?text=${type}'">
+    </div>
+  `).join('');
+
+  return `
+    <div id="${carouselId}" class="carousel slide" data-bs-ride="carousel" onclick="event.stopPropagation();">
+      <div class="carousel-inner">
+        ${itemsHtml}
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#${carouselId}" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#${carouselId}" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    </div>
+  `;
+}
+
 function renderServiceCard(service, isPreview) {
-  // Use first image from images array if available, else fall back to service.image
-  const firstImage = (service.images && service.images.length > 0) ? service.images[0].image : service.image;
-  const imgUrl = getImageUrl(firstImage);
   const desc = truncateText(service.description, 100);
+  const imageHTML = generateImageSliderHTML(service, 'service');
+
   return `
     <div class="col-md-6 col-lg-4">
       <div class="card-custom">
-        <img src="${imgUrl}" class="card-img-top" alt="${service.name}" onerror="this.src='https://via.placeholder.com/400x250?text=Service'">
+        ${imageHTML}
         <div class="card-body">
           <h5 class="card-title">${service.name}</h5>
           <p class="card-text">${desc}</p>
@@ -282,8 +339,7 @@ window.selectServiceForBooking = function (serviceId, servicePrice) {
   }
 };
 function renderProductCard(product, isPreview) {
-  const firstImage = (product.images && product.images.length > 0) ? product.images[0].image : product.image;
-  const imgUrl = getImageUrl(firstImage);
+  const imageHTML = generateImageSliderHTML(product, 'product');
   const desc = truncateText(product.description, isPreview ? 80 : 120);
   const inStock = product.is_available && product.stock_quantity > 0;
   const stockText = inStock ? `${product.stock_quantity} in stock` : 'Out of Stock';
@@ -308,7 +364,7 @@ function renderProductCard(product, isPreview) {
 
   const quickAddBtn = inStock
     ? `<button class="btn btn-outline-custom btn-sm d-flex align-items-center justify-content-center gap-1"
-               onclick="event.stopPropagation(); CartManager.add({id: ${product.id}, name: '${safeName}', price: ${effectivePrice}, image: '${firstImage}', stock: ${product.stock_quantity}}, this)"
+               onclick="event.stopPropagation(); CartManager.add({id: ${product.id}, name: '${safeName}', price: ${effectivePrice}, image: '${product.image || ''}', stock: ${product.stock_quantity}}, this)"
                title="Quick Add to Cart">
          <span class="material-icons" style="font-size:1rem;">add_shopping_cart</span>
        </button>`
@@ -320,7 +376,7 @@ function renderProductCard(product, isPreview) {
         <div class="card-img-container">
           ${discountBadge}
           <span class="card-stock-badge ${stockClass}">${stockText}</span>
-          <img src="${imgUrl}" class="card-img-top" alt="${product.name}" onerror="this.src='https://via.placeholder.com/400x250?text=Product'">
+          ${imageHTML}
         </div>
         <div class="card-body">
           ${categoryTag}
